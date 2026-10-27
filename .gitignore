@@ -1,21 +1,31 @@
 # Dependencies
 node_modules/
 */node_modules/
+**/node_modules/
 
-# Environment files
+# Environment files and credentials (CRITICAL: ZERO LEAKS)
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.cert
 
-# Build outputs
+# Build outputs & caches
 dist/
 build/
+.output/
+.tanstack/
+.wrangler/
+.lovable/
 client/dist/
 
 # Logs and databases
 *.log
 npm-debug.log*
 yarn-debug.log*
+pnpm-debug.log*
 
 # OS and Editor files
 .DS_Store
