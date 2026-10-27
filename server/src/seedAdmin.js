@@ -6,9 +6,9 @@ async function seedAdmin() {
   console.log('Connecting to database...');
   await connectDB();
 
-  const username = 'admin';
-  const email = 'admin@apnascheduler.local';
-  const password = process.argv[2] || 'admin123456';
+  const username = process.env.DEFAULT_ADMIN_USERNAME || 'javedkhan';
+  const email = process.env.DEFAULT_ADMIN_EMAIL || 'javedkhan7786king@gmail.com';
+  const password = process.argv[2] || process.env.DEFAULT_ADMIN_PASSWORD || 'javedkhan1234';
 
   const hashedPassword = await hashPassword(password);
 

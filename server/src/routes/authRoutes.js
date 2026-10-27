@@ -160,6 +160,67 @@ router.post('/login', authLimiter, validateRequest(loginSchema), async (req, res
   }
 });
 
+// POST /api/auth/google
+router.post('/google', async (req, res, next) => {
+  try {
+    const { email, name, googleId } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required for Google authentication.' });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_');
+      const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      const hashedPassword = await hashPassword(randomPassword);
+
+      user = await User.create({
+        username,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'viewer',
+        status: 'active',
+      });
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    const token = signToken({ userId: user._id, role: user.role });
+
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    await logAuditEvent({
+      userId: user._id,
+      username: user.username,
+      action: 'USER_LOGIN_GOOGLE',
+      targetType: 'user',
+      targetId: user._id,
+      ip: req.ip,
+    });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        telegramChatId: user.telegramChatId,
+        telegramNotificationsEnabled: user.telegramNotificationsEnabled,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
   res.clearCookie('auth_token');

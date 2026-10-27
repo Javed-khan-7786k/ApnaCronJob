@@ -49,23 +49,6 @@ export async function authenticateToken(req, res, next) {
     }
   }
 
-  // Fallback for Demo Mode exploration from TanStack Frontend (when header x-demo-mode is 'true')
-  if (!token && req.headers['x-demo-mode'] === 'true') {
-    try {
-      if (mongoose.connection && mongoose.connection.readyState === 1) {
-        const defaultUser = await User.findOne().sort({ createdAt: 1 }).select('-password');
-        if (defaultUser) {
-          req.user = defaultUser;
-          return next();
-        }
-      }
-    } catch {
-      // proceed to fallback demo user
-    }
-    req.user = { _id: '660000000000000000000001', username: 'admin', role: 'admin', email: 'admin@aapnacronjob.com' };
-    return next();
-  }
-
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -82,15 +65,19 @@ export async function authenticateToken(req, res, next) {
   }
 
   try {
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user || user.status !== 'active') {
-      return res.status(401).json({
-        success: false,
-        error: 'User account not found or deactivated.',
-      });
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      const user = await User.findById(decoded.userId).select('-password');
+      if (!user || user.status !== 'active') {
+        return res.status(401).json({
+          success: false,
+          error: 'User account not found or deactivated.',
+        });
+      }
+      req.user = user;
+    } else {
+      req.user = { _id: decoded.userId, role: decoded.role || 'admin', username: 'admin' };
     }
 
-    req.user = user;
     next();
   } catch (err) {
     return res.status(500).json({
