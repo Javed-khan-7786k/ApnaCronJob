@@ -158,6 +158,10 @@ export async function performExecution(job, execution) {
     await Job.findByIdAndUpdate(job._id, {
       lastRunAt: finishTime,
       lastStatus: 'success',
+      lastHttpStatus: result.statusCode,
+      lastDurationMs: result.durationMs,
+      status: job.enabled ? 'active' : 'paused',
+      $inc: { successCount: 1 },
     });
 
     await dispatchExecutionNotification(job, execution, 'success');
@@ -190,6 +194,9 @@ export async function performExecution(job, execution) {
       await Job.findByIdAndUpdate(job._id, {
         lastRunAt: finishTime,
         lastStatus: 'retrying',
+        lastHttpStatus: result.statusCode || null,
+        lastDurationMs: result.durationMs,
+        status: job.enabled ? 'retrying' : 'paused',
       });
 
       await dispatchExecutionNotification(job, execution, 'retry');
@@ -207,6 +214,10 @@ export async function performExecution(job, execution) {
       await Job.findByIdAndUpdate(job._id, {
         lastRunAt: finishTime,
         lastStatus: 'failure',
+        lastHttpStatus: result.statusCode || null,
+        lastDurationMs: result.durationMs,
+        status: job.enabled ? 'failed' : 'paused',
+        $inc: { failureCount: 1 },
       });
 
       const isExhausted = execution.attemptCount >= execution.maxAttempts;

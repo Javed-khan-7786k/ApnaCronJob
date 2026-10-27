@@ -35,6 +35,23 @@ const jobSchema = new mongoose.Schema(
       of: String,
       default: {},
     },
+    headersList: [{
+      key: { type: String, default: '' },
+      value: { type: String, default: '' },
+    }],
+    authMode: {
+      type: String,
+      enum: ['none', 'bearer', 'basic', 'header'],
+      default: 'none',
+    },
+    authToken: {
+      type: String,
+      default: '',
+    },
+    hasBody: {
+      type: Boolean,
+      default: false,
+    },
     body: {
       type: String,
       default: '',
@@ -100,6 +117,11 @@ const jobSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    status: {
+      type: String,
+      enum: ['active', 'paused', 'running', 'retrying', 'failed'],
+      default: 'active',
+    },
     nextRunAt: {
       type: Date,
       default: null,
@@ -113,6 +135,22 @@ const jobSchema = new mongoose.Schema(
       type: String,
       enum: ['never_run', 'success', 'failure', 'running', 'retrying'],
       default: 'never_run',
+    },
+    lastHttpStatus: {
+      type: Number,
+      default: null,
+    },
+    lastDurationMs: {
+      type: Number,
+      default: null,
+    },
+    successCount: {
+      type: Number,
+      default: 0,
+    },
+    failureCount: {
+      type: Number,
+      default: 0,
     },
     timeoutMs: {
       type: Number,
@@ -156,6 +194,14 @@ const jobSchema = new mongoose.Schema(
       enum: ['skip', 'run-once', 'run-all'],
       default: 'run-once',
     },
+    notifyEmail: {
+      type: Boolean,
+      default: true,
+    },
+    notifyWebhook: {
+      type: Boolean,
+      default: false,
+    },
     notificationSettings: {
       notifyOnSuccess: {
         type: Boolean,
@@ -181,8 +227,44 @@ const jobSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual getters for frontend compatibility
+jobSchema.virtual('id').get(function () {
+  return this._id ? this._id.toString() : '';
+});
+
+jobSchema.virtual('url').get(function () {
+  return this.targetUrl;
+});
+
+jobSchema.virtual('method').get(function () {
+  return this.httpMethod;
+});
+
+jobSchema.virtual('cron').get(function () {
+  return this.cronExpression || this.customCron || '0 0 * * *';
+});
+
+jobSchema.virtual('timeoutSeconds').get(function () {
+  return Math.round((this.timeoutMs || 30000) / 1000);
+});
+
+jobSchema.virtual('maxRetries').get(function () {
+  return this.retryPolicy?.maxAttempts || 10;
+});
+
+jobSchema.virtual('retryBackoff').get(function () {
+  return this.retryPolicy?.strategy || 'fixed';
+});
+
+jobSchema.virtual('lastRunMinutesAgo').get(function () {
+  if (!this.lastRunAt) return null;
+  return Math.max(0, Math.round((Date.now() - new Date(this.lastRunAt).getTime()) / 60000));
+});
 
 // Compound index for scheduler claiming
 jobSchema.index({ enabled: 1, nextRunAt: 1 });

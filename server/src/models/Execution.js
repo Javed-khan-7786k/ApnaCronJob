@@ -104,8 +104,33 @@ const executionSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual getters for frontend compatibility
+executionSchema.virtual('id').get(function () {
+  return this._id ? this._id.toString() : '';
+});
+
+executionSchema.virtual('httpStatus').get(function () {
+  return this.responseStatus;
+});
+
+executionSchema.virtual('attempt').get(function () {
+  return this.attemptCount || 1;
+});
+
+executionSchema.virtual('errorDetail').get(function () {
+  return this.errorDetails?.message || null;
+});
+
+executionSchema.virtual('startedMinutesAgo').get(function () {
+  const time = this.startedAt || this.createdAt;
+  if (!time) return 0;
+  return Math.max(0, Math.round((Date.now() - new Date(time).getTime()) / 60000));
+});
 
 // Indexes for fast querying & worker queue processing
 executionSchema.index({ status: 1, scheduledFor: 1 });

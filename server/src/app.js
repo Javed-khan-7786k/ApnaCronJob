@@ -15,6 +15,11 @@ import internalRoutes from './routes/internalRoutes.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import systemRoutes from './routes/systemRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
+import apiKeyRoutes from './routes/apiKeyRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import integrationRoutes from './routes/integrationRoutes.js';
+import teamRoutes from './routes/teamRoutes.js';
+import monitoringRoutes from './routes/monitoringRoutes.js';
 
 const app = express();
 
@@ -32,6 +37,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
+  'http://127.0.0.1:3000',
 ].filter(Boolean);
 
 app.use(cors({
@@ -44,7 +50,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tick-Secret', 'X-Telegram-Bot-Api-Secret-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tick-Secret', 'X-Telegram-Bot-Api-Secret-Token', 'x-api-key'],
 }));
 
 // Body parsers
@@ -74,6 +80,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/executions', executionRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/api-keys', apiKeyRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/integrations', integrationRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // In production, serve built frontend assets if present
 import path from 'path';

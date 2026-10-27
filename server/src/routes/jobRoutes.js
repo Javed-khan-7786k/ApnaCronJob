@@ -1,8 +1,8 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import Job from '../models/Job.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { validateRequest } from '../middleware/validate.js';
 import { buildCronExpression, calculateNextRunAt, getUpcomingRunsPreview, validateCronExpression, isValidTimezone } from '../utils/cronHelper.js';
 import { validateUrlForSSRF } from '../utils/ssrf.js';
 import { executeHttpRequest } from '../services/httpExecutor.js';
@@ -11,50 +11,75 @@ import { logAuditEvent } from '../services/auditService.js';
 
 const router = express.Router();
 
-const jobInputSchema = z.object({
-  name: z.string().min(2).max(120),
-  description: z.string().max(500).optional().default(''),
-  tags: z.array(z.string()).optional().default([]),
-  targetUrl: z.string().url(),
-  httpMethod: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']).default('GET'),
-  headers: z.record(z.string()).optional().default({}),
-  body: z.string().optional().default(''),
-  expectedStatusCodes: z.array(z.number()).optional().default([200, 201, 202, 204]),
-  responseValidation: z.object({
-    containsText: z.string().optional().default(''),
-  }).optional().default({}),
-  scheduleType: z.enum(['once', 'daily', 'weekly', 'monthly', 'custom']),
-  scheduleTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional().default('00:00'),
-  daysOfWeek: z.array(z.number().min(0).max(6)).optional().default([]),
-  daysOfMonth: z.array(z.number().min(1).max(31)).optional().default([]),
-  customCron: z.string().optional().default(''),
-  oneTimeRunAt: z.string().datetime().optional().nullable(),
-  timezone: z.string().default('Asia/Kolkata'),
-  startDate: z.string().datetime().optional().nullable(),
-  endDate: z.string().datetime().optional().nullable(),
-  enabled: z.boolean().default(true),
-  timeoutMs: z.number().min(1000).max(120000).default(30000),
-  retryPolicy: z.object({
-    maxAttempts: z.number().min(1).max(10).default(10),
-    delaySeconds: z.number().min(1).max(3600).default(5),
-    strategy: z.enum(['fixed', 'exponential']).default('fixed'),
-    retryOnHttp5xx: z.boolean().default(true),
-    retryOn429: z.boolean().default(true),
-    retryOnNetworkError: z.boolean().default(true),
-  }).optional().default({}),
-  misfirePolicy: z.enum(['skip', 'run-once', 'run-all']).default('run-once'),
-  notificationSettings: z.object({
-    notifyOnSuccess: z.boolean().default(false),
-    notifyOnFailure: z.boolean().default(true),
-    notifyOnRetryExhausted: z.boolean().default(true),
-    telegramChatId: z.string().optional().default(''),
-  }).optional().default({}),
-});
+async function findJobDoc(id) {
+  if (mongoose.isValidObjectId(id)) {
+    const byId = await Job.findById(id);
+    if (byId) return byId;
+  }
+  return await Job.findOne({ $or: [{ name: id }] });
+}
 
-// GET /api/jobs
+/**
+ * Normalizes input from both the React console and the TanStack frontend
+ */
+function normalizeJobInput(body) {
+  const data = { ...body };
+
+  // Normalize target URL
+  if (data.url && !data.targetUrl) {
+    data.targetUrl = data.url;
+  }
+
+  // Normalize HTTP method
+  if (data.method && !data.httpMethod) {
+    data.httpMethod = String(data.method).toUpperCase();
+  }
+
+  // Normalize cron expression
+  if (data.cron && !data.customCron && !data.cronExpression) {
+    data.customCron = data.cron;
+    data.scheduleType = 'custom';
+  }
+
+  // Normalize timeout
+  if (data.timeoutSeconds !== undefined && data.timeoutMs === undefined) {
+    data.timeoutMs = Number(data.timeoutSeconds) * 1000;
+  }
+
+  // Normalize retry policy
+  data.retryPolicy = data.retryPolicy || {};
+  if (data.maxRetries !== undefined) {
+    data.retryPolicy.maxAttempts = Number(data.maxRetries);
+  }
+  if (data.retryBackoff !== undefined) {
+    data.retryPolicy.strategy = data.retryBackoff;
+  }
+
+  // Normalize headers
+  if (Array.isArray(data.headers)) {
+    data.headersList = data.headers;
+    const obj = {};
+    data.headers.forEach(h => {
+      if (h && h.key && h.key.trim()) obj[h.key.trim()] = String(h.value || '');
+    });
+    data.headers = obj;
+  } else if (data.headers && typeof data.headers === 'object') {
+    data.headersList = Object.entries(data.headers).map(([k, v]) => ({ key: k, value: String(v) }));
+  }
+
+  // Handle authMode header injection if configured
+  if (data.authMode === 'bearer' && data.authToken) {
+    data.headers = data.headers || {};
+    data.headers['Authorization'] = `Bearer ${data.authToken}`;
+  }
+
+  return data;
+}
+
+// GET /api/jobs (List jobs)
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    const { search, tag, status, enabled, page = 1, limit = 50 } = req.query;
+    const { search, tag, status, enabled, page = 1, limit = 100 } = req.query;
     const query = {};
 
     if (search) {
@@ -65,20 +90,12 @@ router.get('/', authenticateToken, async (req, res, next) => {
       ];
     }
 
-    if (tag) {
-      query.tags = tag;
-    }
-
-    if (status) {
-      query.lastStatus = status;
-    }
-
-    if (enabled !== undefined) {
-      query.enabled = enabled === 'true';
-    }
+    if (tag) query.tags = tag;
+    if (status) query.lastStatus = status;
+    if (enabled !== undefined) query.enabled = enabled === 'true';
 
     const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 50;
+    const limitNum = parseInt(limit, 10) || 100;
     const skip = (pageNum - 1) * limitNum;
 
     const [jobs, total] = await Promise.all([
@@ -104,7 +121,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
 // POST /api/jobs/preview-schedule
 router.post('/preview-schedule', authenticateToken, async (req, res) => {
   try {
-    const previews = getUpcomingRunsPreview(req.body, 5);
+    const normalized = normalizeJobInput(req.body);
+    const previews = getUpcomingRunsPreview(normalized, 5);
     res.json({ success: true, previews });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -114,12 +132,20 @@ router.post('/preview-schedule', authenticateToken, async (req, res) => {
 // POST /api/jobs/test-request
 router.post('/test-request', authenticateToken, async (req, res) => {
   try {
-    const { url, method = 'GET', headers = {}, body = '', timeoutMs = 15000, expectedStatusCodes = [200, 201, 202, 204] } = req.body;
+    const { url, targetUrl, method = 'GET', httpMethod, headers = {}, body = '', timeoutMs = 15000, expectedStatusCodes = [200, 201, 202, 204] } = req.body;
+
+    let headerObj = headers;
+    if (Array.isArray(headers)) {
+      headerObj = {};
+      headers.forEach(h => {
+        if (h && h.key) headerObj[h.key] = h.value;
+      });
+    }
 
     const result = await executeHttpRequest({
-      url,
-      method,
-      headers,
+      url: url || targetUrl,
+      method: (httpMethod || method).toUpperCase(),
+      headers: headerObj,
       body,
       timeoutMs,
       expectedStatusCodes,
@@ -131,10 +157,17 @@ router.post('/test-request', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/jobs
-router.post('/', authenticateToken, validateRequest(jobInputSchema), async (req, res, next) => {
+// POST /api/jobs (Create Job)
+router.post('/', authenticateToken, async (req, res, next) => {
   try {
-    const data = req.body;
+    const data = normalizeJobInput(req.body);
+
+    if (!data.name || !data.name.trim()) {
+      return res.status(400).json({ success: false, error: 'Job name is required.' });
+    }
+    if (!data.targetUrl || !data.targetUrl.trim()) {
+      return res.status(400).json({ success: false, error: 'Target URL is required.' });
+    }
 
     // SSRF Check
     const ssrfCheck = await validateUrlForSSRF(data.targetUrl);
@@ -146,44 +179,45 @@ router.post('/', authenticateToken, validateRequest(jobInputSchema), async (req,
     }
 
     // Timezone validation
-    if (!isValidTimezone(data.timezone)) {
+    const tz = data.timezone || 'Asia/Kolkata';
+    if (!isValidTimezone(tz)) {
       return res.status(400).json({
         success: false,
-        error: `Invalid IANA timezone "${data.timezone}".`,
+        error: `Invalid IANA timezone "${tz}".`,
       });
     }
 
-    // Cron syntax validation
-    if (data.scheduleType === 'custom') {
-      const cronValidation = validateCronExpression(data.customCron);
+    // Cron validation
+    let cronExpression = data.cronExpression || '';
+    if (data.scheduleType === 'custom' || data.customCron) {
+      const expr = data.customCron || data.cron;
+      const cronValidation = validateCronExpression(expr);
       if (!cronValidation.valid) {
         return res.status(400).json({
           success: false,
           error: `Invalid cron expression: ${cronValidation.error}`,
         });
       }
-    }
-
-    // Build cron expression
-    let cronExpression = '';
-    if (data.scheduleType !== 'once') {
+      cronExpression = expr;
+    } else if (data.scheduleType !== 'once') {
       cronExpression = buildCronExpression({
-        type: data.scheduleType,
-        time: data.scheduleTime,
-        daysOfWeek: data.daysOfWeek,
-        daysOfMonth: data.daysOfMonth,
+        type: data.scheduleType || 'daily',
+        time: data.scheduleTime || '00:00',
+        daysOfWeek: data.daysOfWeek || [],
+        daysOfMonth: data.daysOfMonth || [],
         customCron: data.customCron,
       });
     }
 
     const jobDoc = {
       ...data,
+      timezone: tz,
       cronExpression,
-      createdBy: req.user._id,
+      createdBy: req.user?._id,
+      status: data.enabled !== false ? 'active' : 'paused',
     };
 
-    // Calculate initial nextRunAt
-    if (data.enabled) {
+    if (data.enabled !== false) {
       jobDoc.nextRunAt = calculateNextRunAt(jobDoc);
     } else {
       jobDoc.nextRunAt = null;
@@ -192,8 +226,8 @@ router.post('/', authenticateToken, validateRequest(jobInputSchema), async (req,
     const job = await Job.create(jobDoc);
 
     await logAuditEvent({
-      userId: req.user._id,
-      username: req.user.username,
+      userId: req.user?._id,
+      username: req.user?.username || 'system',
       action: 'JOB_CREATE',
       targetType: 'job',
       targetId: job._id,
@@ -210,7 +244,7 @@ router.post('/', authenticateToken, validateRequest(jobInputSchema), async (req,
 // GET /api/jobs/:id
 router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await findJobDoc(req.params.id);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -221,42 +255,45 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // PUT /api/jobs/:id
-router.put('/:id', authenticateToken, validateRequest(jobInputSchema), async (req, res, next) => {
+router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const data = req.body;
+    const data = normalizeJobInput(req.body);
 
-    const ssrfCheck = await validateUrlForSSRF(data.targetUrl);
-    if (!ssrfCheck.safe) {
+    if (data.targetUrl) {
+      const ssrfCheck = await validateUrlForSSRF(data.targetUrl);
+      if (!ssrfCheck.safe) {
+        return res.status(400).json({
+          success: false,
+          error: `SSRF Violation: ${ssrfCheck.error}`,
+        });
+      }
+    }
+
+    const tz = data.timezone || 'Asia/Kolkata';
+    if (!isValidTimezone(tz)) {
       return res.status(400).json({
         success: false,
-        error: `SSRF Violation: ${ssrfCheck.error}`,
+        error: `Invalid IANA timezone "${tz}".`,
       });
     }
 
-    if (!isValidTimezone(data.timezone)) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid IANA timezone "${data.timezone}".`,
-      });
-    }
-
-    if (data.scheduleType === 'custom') {
-      const cronValidation = validateCronExpression(data.customCron);
+    let cronExpression = data.cronExpression || '';
+    if (data.scheduleType === 'custom' || data.customCron) {
+      const expr = data.customCron || data.cron;
+      const cronValidation = validateCronExpression(expr);
       if (!cronValidation.valid) {
         return res.status(400).json({
           success: false,
           error: `Invalid cron expression: ${cronValidation.error}`,
         });
       }
-    }
-
-    let cronExpression = '';
-    if (data.scheduleType !== 'once') {
+      cronExpression = expr;
+    } else if (data.scheduleType !== 'once') {
       cronExpression = buildCronExpression({
-        type: data.scheduleType,
-        time: data.scheduleTime,
-        daysOfWeek: data.daysOfWeek,
-        daysOfMonth: data.daysOfMonth,
+        type: data.scheduleType || 'daily',
+        time: data.scheduleTime || '00:00',
+        daysOfWeek: data.daysOfWeek || [],
+        daysOfMonth: data.daysOfMonth || [],
         customCron: data.customCron,
       });
     }
@@ -264,22 +301,25 @@ router.put('/:id', authenticateToken, validateRequest(jobInputSchema), async (re
     const updateDoc = {
       ...data,
       cronExpression,
+      status: data.enabled !== false ? 'active' : 'paused',
     };
 
-    if (data.enabled) {
+    if (data.enabled !== false) {
       updateDoc.nextRunAt = calculateNextRunAt(updateDoc);
     } else {
       updateDoc.nextRunAt = null;
     }
 
-    const job = await Job.findByIdAndUpdate(req.params.id, updateDoc, { new: true });
-    if (!job) {
+    const existing = await findJobDoc(req.params.id);
+    if (!existing) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
 
+    const job = await Job.findByIdAndUpdate(existing._id, updateDoc, { new: true });
+
     await logAuditEvent({
-      userId: req.user._id,
-      username: req.user.username,
+      userId: req.user?._id,
+      username: req.user?.username || 'system',
       action: 'JOB_UPDATE',
       targetType: 'job',
       targetId: job._id,
@@ -295,18 +335,20 @@ router.put('/:id', authenticateToken, validateRequest(jobInputSchema), async (re
 // DELETE /api/jobs/:id
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const job = await Job.findByIdAndDelete(req.params.id);
-    if (!job) {
+    const existing = await findJobDoc(req.params.id);
+    if (!existing) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
 
+    await Job.findByIdAndDelete(existing._id);
+
     await logAuditEvent({
-      userId: req.user._id,
-      username: req.user.username,
+      userId: req.user?._id,
+      username: req.user?.username || 'system',
       action: 'JOB_DELETE',
       targetType: 'job',
-      targetId: req.params.id,
-      details: { name: job.name },
+      targetId: existing._id,
+      details: { name: existing.name },
       ip: req.ip,
     });
 
@@ -319,7 +361,7 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
 // POST /api/jobs/:id/run
 router.post('/:id/run', authenticateToken, async (req, res, next) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await findJobDoc(req.params.id);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -327,8 +369,8 @@ router.post('/:id/run', authenticateToken, async (req, res, next) => {
     const execution = await triggerJobNow(job, 'manual');
 
     await logAuditEvent({
-      userId: req.user._id,
-      username: req.user.username,
+      userId: req.user?._id,
+      username: req.user?.username || 'system',
       action: 'JOB_RUN_NOW',
       targetType: 'job',
       targetId: job._id,
@@ -342,28 +384,29 @@ router.post('/:id/run', authenticateToken, async (req, res, next) => {
       status: execution.status,
       responseStatus: execution.responseStatus,
       durationMs: execution.durationMs,
+      data: execution,
     });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/jobs/:id/toggle
-router.post('/:id/toggle', authenticateToken, async (req, res, next) => {
+const toggleJobHandler = async (req, res, next) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await findJobDoc(req.params.id);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
 
     const newEnabled = !job.enabled;
     job.enabled = newEnabled;
+    job.status = newEnabled ? 'active' : 'paused';
     job.nextRunAt = newEnabled ? calculateNextRunAt(job) : null;
     await job.save();
 
     await logAuditEvent({
-      userId: req.user._id,
-      username: req.user.username,
+      userId: req.user?._id,
+      username: req.user?.username || 'system',
       action: newEnabled ? 'JOB_ENABLE' : 'JOB_PAUSE',
       targetType: 'job',
       targetId: job._id,
@@ -374,7 +417,11 @@ router.post('/:id/toggle', authenticateToken, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
+
+// Support both POST and PATCH for toggle
+router.post('/:id/toggle', authenticateToken, toggleJobHandler);
+router.patch('/:id/toggle', authenticateToken, toggleJobHandler);
 
 // POST /api/jobs/:id/duplicate
 router.post('/:id/duplicate', authenticateToken, async (req, res, next) => {
@@ -386,19 +433,20 @@ router.post('/:id/duplicate', authenticateToken, async (req, res, next) => {
 
     const duplicateData = original.toObject();
     delete duplicateData._id;
+    delete duplicateData.id;
     delete duplicateData.createdAt;
     delete duplicateData.updatedAt;
     duplicateData.name = `${original.name} (Copy)`;
     duplicateData.lastStatus = 'never_run';
     duplicateData.lastRunAt = null;
     duplicateData.nextRunAt = original.enabled ? calculateNextRunAt(duplicateData) : null;
-    duplicateData.createdBy = req.user._id;
+    duplicateData.createdBy = req.user?._id;
 
     const duplicatedJob = await Job.create(duplicateData);
 
     await logAuditEvent({
-      userId: req.user._id,
-      username: req.user.username,
+      userId: req.user?._id,
+      username: req.user?.username || 'system',
       action: 'JOB_DUPLICATE',
       targetType: 'job',
       targetId: duplicatedJob._id,
