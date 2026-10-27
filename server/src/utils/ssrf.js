@@ -55,10 +55,13 @@ export async function validateUrlForSSRF(rawUrl) {
     }
   }
 
-  // Domain allowlist check if configured
-  if (env.ALLOWED_DOMAINS && env.ALLOWED_DOMAINS.trim().length > 0) {
-    const allowed = env.ALLOWED_DOMAINS.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
-    const matches = allowed.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+  // Domain allowlist check if configured (sanitizes quotes, empty strings, and wildcards)
+  const cleanAllowed = (env.ALLOWED_DOMAINS || '')
+    .split(',')
+    .map(d => d.trim().toLowerCase().replace(/^["']|["']$/g, ''))
+    .filter(Boolean);
+  if (cleanAllowed.length > 0 && !cleanAllowed.includes('*')) {
+    const matches = cleanAllowed.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
     if (!matches) {
       return { safe: false, error: `Host "${hostname}" is not on the allowed destination domains list.` };
     }
