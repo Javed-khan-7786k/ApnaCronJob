@@ -26,6 +26,11 @@ const envSchema = z.object({
   TELEGRAM_WEBHOOK_URL: z.string().optional().default(''),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional().default(''),
 
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
+  GOOGLE_CALLBACK_URL: z.string().default('http://localhost:5000/api/auth/google/callback'),
+
   // Engine
   SCHEDULER_ENABLED: z.string().transform(v => v !== 'false').default('true'),
   SCHEDULER_TICK_INTERVAL_MS: z.string().transform(v => parseInt(v, 10)).default('30000'),

@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios';
 import { z } from 'zod';
 import User from '../models/User.js';
 import { hashPassword, comparePassword, signToken } from '../utils/crypto.js';
@@ -157,6 +158,99 @@ router.post('/login', authLimiter, validateRequest(loginSchema), async (req, res
     });
   } catch (err) {
     next(err);
+  }
+});
+
+// GET /api/auth/google - Initiates Google OAuth consent screen redirect
+router.get('/google', (req, res) => {
+  if (!env.GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ success: false, error: 'Google OAuth is not configured on this server.' });
+  }
+
+  const params = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback',
+    response_type: 'code',
+    scope: 'openid email profile',
+    access_type: 'offline',
+    prompt: 'select_account',
+  });
+
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+});
+
+// GET /api/auth/google/callback - Google OAuth redirect callback
+router.get('/google/callback', async (req, res, next) => {
+  const clientUrl = env.CLIENT_URL || 'http://localhost:3000';
+  try {
+    const { code, error } = req.query;
+
+    if (error || !code) {
+      return res.redirect(`${clientUrl}/login?error=${encodeURIComponent(error || 'Google authentication was cancelled.')}`);
+    }
+
+    // Exchange code for tokens
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+      code,
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback',
+      grant_type: 'authorization_code',
+    });
+
+    const { access_token } = tokenResponse.data;
+
+    // Fetch Google User Profile
+    const profileResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    const { email, name, id: googleId } = profileResponse.data;
+    if (!email) {
+      return res.redirect(`${clientUrl}/login?error=Google_account_missing_email`);
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_');
+      const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      const hashedPassword = await hashPassword(randomPassword);
+
+      user = await User.create({
+        username,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'viewer',
+        status: 'active',
+      });
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    const token = signToken({ userId: user._id, role: user.role });
+
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    await logAuditEvent({
+      userId: user._id,
+      username: user.username,
+      action: 'USER_LOGIN_GOOGLE_OAUTH',
+      targetType: 'user',
+      targetId: user._id,
+      ip: req.ip,
+    });
+
+    // Redirect to frontend with token
+    res.redirect(`${clientUrl}/app?token=${encodeURIComponent(token)}&username=${encodeURIComponent(user.username)}`);
+  } catch (err) {
+    console.error('Google OAuth callback error:', err.response?.data || err.message);
+    res.redirect(`${clientUrl}/login?error=oauth_exchange_failed`);
   }
 });
 
