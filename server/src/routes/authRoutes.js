@@ -11,6 +11,29 @@ import env from '../config/env.js';
 
 const router = express.Router();
 
+async function generateUniqueUsername(base) {
+  let clean = (base || 'user').toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
+  if (clean.length < 3) clean = 'user_' + clean;
+  let candidate = clean;
+  for (let i = 0; i < 5; i++) {
+    const exists = await User.findOne({ username: candidate });
+    if (!exists) return candidate;
+    candidate = `${clean.slice(0, 18)}_${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+  return `${clean.slice(0, 16)}_${Date.now().toString().slice(-6)}`;
+}
+
+function setAuthCookie(req, res, token, maxAgeDays = 7) {
+  const isLocalhost = req.headers.host && (req.headers.host.includes('localhost') || req.headers.host.includes('127.0.0.1'));
+  res.cookie('auth_token', token, {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production' && !isLocalhost,
+    sameSite: 'lax',
+    maxAge: maxAgeDays * 24 * 60 * 60 * 1000,
+  });
+}
+
+
 const registerSchema = z.object({
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain alphanumeric, dash, and underscore'),
   email: z.string().email(),
@@ -38,15 +61,18 @@ router.post('/register', authLimiter, validateRequest(registerSchema), async (re
   try {
     const { username, email, password, telegramChatId } = req.body;
 
-    const existingUser = await User.findOne({
-      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }]
-    });
-
-    if (existingUser) {
+    const existingEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingEmail) {
       return res.status(409).json({
         success: false,
-        error: 'User with that email or username already exists.',
+        error: 'An account with this email address already exists. Please sign in.',
       });
+    }
+
+    let finalUsername = username.toLowerCase().trim();
+    const existingUsername = await User.findOne({ username: finalUsername });
+    if (existingUsername) {
+      finalUsername = await generateUniqueUsername(finalUsername);
     }
 
     // First user created is automatically admin
@@ -55,7 +81,7 @@ router.post('/register', authLimiter, validateRequest(registerSchema), async (re
 
     const hashedPassword = await hashPassword(password);
     const user = await User.create({
-      username: username.toLowerCase(),
+      username: finalUsername,
       email: email.toLowerCase(),
       password: hashedPassword,
       role,
@@ -63,13 +89,7 @@ router.post('/register', authLimiter, validateRequest(registerSchema), async (re
     });
 
     const token = signToken({ userId: user._id, role: user.role });
-
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookie(req, res, token, 7);
 
     await logAuditEvent({
       userId: user._id,
@@ -128,12 +148,7 @@ router.post('/login', authLimiter, validateRequest(loginSchema), async (req, res
 
     const token = signToken({ userId: user._id, role: user.role });
 
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookie(req, res, token, 7);
 
     await logAuditEvent({
       userId: user._id,
@@ -212,7 +227,7 @@ router.get('/google/callback', async (req, res, next) => {
 
     let user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_');
+      const username = await generateUniqueUsername(email.split('@')[0]);
       const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
       const hashedPassword = await hashPassword(randomPassword);
 
@@ -220,7 +235,7 @@ router.get('/google/callback', async (req, res, next) => {
         username,
         email: email.toLowerCase(),
         password: hashedPassword,
-        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'viewer',
+        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'user',
         status: 'active',
       });
     }
@@ -229,13 +244,7 @@ router.get('/google/callback', async (req, res, next) => {
     await user.save();
 
     const token = signToken({ userId: user._id, role: user.role });
-
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookie(req, res, token, 30);
 
     await logAuditEvent({
       userId: user._id,
@@ -264,7 +273,7 @@ router.post('/google', async (req, res, next) => {
 
     let user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_');
+      const username = await generateUniqueUsername(email.split('@')[0]);
       const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
       const hashedPassword = await hashPassword(randomPassword);
 
@@ -272,7 +281,7 @@ router.post('/google', async (req, res, next) => {
         username,
         email: email.toLowerCase(),
         password: hashedPassword,
-        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'viewer',
+        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'user',
         status: 'active',
       });
     }
@@ -281,13 +290,7 @@ router.post('/google', async (req, res, next) => {
     await user.save();
 
     const token = signToken({ userId: user._id, role: user.role });
-
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookie(req, res, token, 30);
 
     await logAuditEvent({
       userId: user._id,

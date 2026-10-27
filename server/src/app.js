@@ -34,6 +34,8 @@ app.use(helmet({
 // CORS Configuration
 const allowedOrigins = [
   env.CLIENT_URL,
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
@@ -42,8 +44,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, server-to-server)
-    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production') {
+    // Allow requests with no origin or any localhost/127.0.0.1 port or configured allowedOrigins
+    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production' || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }
     return callback(new Error(`CORS policy does not allow access from origin: ${origin}`));

@@ -4,6 +4,7 @@ import logger from './config/logger.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { startInProcessScheduler, stopInProcessScheduler, triggerJobNow } from './services/schedulerService.js';
 import { startTelegramPolling, stopTelegramPolling } from './services/telegramService.js';
+import { startSelfPinger, stopSelfPinger } from './services/selfPingerService.js';
 
 let server = null;
 
@@ -31,6 +32,9 @@ async function bootstrap() {
     // 4. Start Telegram Bot Polling if enabled
     startTelegramPolling(triggerJobNow);
 
+    // 5. Start Keep-Alive Self-Pinger (prevents sleeping on free cloud tiers)
+    startSelfPinger();
+
   } catch (err) {
     logger.error('Fatal bootstrap error', { error: err.message, stack: err.stack });
     process.exit(1);
@@ -43,6 +47,7 @@ async function gracefulShutdown(signal) {
 
   stopInProcessScheduler();
   stopTelegramPolling();
+  stopSelfPinger();
 
   if (server) {
     server.close(() => {

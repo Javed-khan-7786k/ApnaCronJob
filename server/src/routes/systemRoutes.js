@@ -106,4 +106,38 @@ router.get('/system/stats', authenticateToken, async (req, res, next) => {
   }
 });
 
+import {
+  getSelfPingerStatus,
+  updateSelfPingerConfig,
+  executePing,
+} from '../services/selfPingerService.js';
+
+// GET /api/system/self-pinger (Get keepalive status)
+router.get('/system/self-pinger', (req, res) => {
+  res.json({
+    success: true,
+    data: getSelfPingerStatus(),
+  });
+});
+
+// POST /api/system/self-pinger (Configure self-pinger)
+router.post('/system/self-pinger', (req, res) => {
+  const { enabled, intervalMs, targetUrl } = req.body;
+  const updated = updateSelfPingerConfig({ enabled, intervalMs, targetUrl });
+  res.json({
+    success: true,
+    message: 'Self-pinger configuration updated successfully',
+    data: updated,
+  });
+});
+
+// POST /api/system/self-pinger/ping-now (Manual test ping)
+router.post('/system/self-pinger/ping-now', async (req, res) => {
+  const result = await executePing();
+  res.json({
+    success: result.success,
+    data: result,
+  });
+});
+
 export default router;

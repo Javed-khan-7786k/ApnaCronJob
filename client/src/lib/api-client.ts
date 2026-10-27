@@ -429,4 +429,22 @@ export const apiClient = {
       return request("/monitoring/overview", { method: "GET" });
     },
   },
+
+  /**
+   * System & Keep-Alive Self-Pinger
+   */
+  system: {
+    async getSelfPinger() {
+      return request("/system/self-pinger", { method: "GET" });
+    },
+    async updateSelfPinger(data: { enabled?: boolean; intervalMs?: number; targetUrl?: string }) {
+      return request("/system/self-pinger", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    async pingNow() {
+      return request("/system/self-pinger/ping-now", { method: "POST" });
+    },
+  },
 };

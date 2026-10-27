@@ -22,6 +22,7 @@ export const Route = createFileRoute("/register")({
 
 export function RegisterPage() {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [workspace, setWorkspace] = useState("");
@@ -62,6 +63,7 @@ export function RegisterPage() {
     try {
       await signUp({
         name: cleanName,
+        username: username.trim(),
         email: cleanEmail,
         password: cleanPass,
         workspace: workspace.trim() || `${cleanName}'s Workspace`,
@@ -143,10 +145,28 @@ export function RegisterPage() {
                 </label>
                 <Input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (!username) {
+                      setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 20));
+                    }
+                  }}
                   placeholder="e.g. Alex Rivera"
                   autoComplete="name"
                   required
+                  className="text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                  Username (For Login)
+                </label>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                  placeholder="e.g. alex_rivera"
+                  autoComplete="username"
                   className="text-xs font-mono"
                 />
               </div>

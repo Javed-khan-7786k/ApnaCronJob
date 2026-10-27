@@ -4,9 +4,10 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { DataStore } from "@/lib/data-store";
 import { apiClient, type BackendHealth } from "@/lib/api-client";
-import { Settings, Globe, Shield, Save, Server, RefreshCw, CheckCircle2, AlertTriangle, Database, Wifi } from "lucide-react";
+import { Settings, Globe, Shield, Save, Server, RefreshCw, CheckCircle2, AlertTriangle, Database, Wifi, Activity, Zap, Clock } from "lucide-react";
 import { pageHead } from "@/lib/head";
 import { toast } from "sonner";
 
@@ -34,6 +35,29 @@ export function SettingsGeneralPage() {
   const [probing, setProbing] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
+  const [selfPinger, setSelfPinger] = useState<{
+    enabled: boolean;
+    intervalMs: number;
+    targetUrl: string;
+    totalPings: number;
+    lastPingAt: string | null;
+    lastPingStatus: string;
+    lastPingDurationMs: number;
+    isRunning: boolean;
+    activeUrl?: string;
+  }>({
+    enabled: true,
+    intervalMs: 600000,
+    targetUrl: "",
+    totalPings: 0,
+    lastPingAt: null,
+    lastPingStatus: "never",
+    lastPingDurationMs: 0,
+    isRunning: false,
+  });
+  const [pingingNow, setPingingNow] = useState(false);
+  const [savingPinger, setSavingPinger] = useState(false);
+
   useEffect(() => {
     const s = DataStore.getSettings();
     setWorkspaceName(s.workspaceName);
@@ -41,7 +65,75 @@ export function SettingsGeneralPage() {
     setDefaultTimeout(s.defaultTimeout);
 
     checkBackend();
+    fetchSelfPinger();
   }, []);
+
+  const fetchSelfPinger = async () => {
+    try {
+      const res = await apiClient.system.getSelfPinger();
+      if (res.success && res.data) {
+        setSelfPinger(res.data);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleToggleSelfPinger = async (newEnabled: boolean) => {
+    setSavingPinger(true);
+    try {
+      const res = await apiClient.system.updateSelfPinger({
+        enabled: newEnabled,
+        intervalMs: selfPinger.intervalMs,
+        targetUrl: selfPinger.targetUrl,
+      });
+      if (res.success && res.data) {
+        setSelfPinger(res.data);
+        toast.success(newEnabled ? "Self-Pinger Keep-Alive enabled!" : "Self-Pinger disabled.");
+      }
+    } catch (err: any) {
+      toast.error(`Failed to update self-pinger: ${err.message}`);
+    } finally {
+      setSavingPinger(false);
+    }
+  };
+
+  const handleSavePingerConfig = async () => {
+    setSavingPinger(true);
+    try {
+      const res = await apiClient.system.updateSelfPinger({
+        enabled: selfPinger.enabled,
+        intervalMs: selfPinger.intervalMs,
+        targetUrl: selfPinger.targetUrl,
+      });
+      if (res.success && res.data) {
+        setSelfPinger(res.data);
+        toast.success("Keep-alive target & interval updated successfully.");
+      }
+    } catch (err: any) {
+      toast.error(`Failed to update: ${err.message}`);
+    } finally {
+      setSavingPinger(false);
+    }
+  };
+
+  const handlePingNow = async () => {
+    setPingingNow(true);
+    toast.loading("Sending keep-alive test ping...", { id: "ping-now" });
+    try {
+      const res = await apiClient.system.pingNow();
+      if (res.success) {
+        toast.success(`Ping succeeded in ${res.data?.durationMs}ms!`, { id: "ping-now" });
+      } else {
+        toast.error(`Ping failed: ${res.data?.error || "Unknown error"}`, { id: "ping-now" });
+      }
+      fetchSelfPinger();
+    } catch (err: any) {
+      toast.error(`Ping request failed: ${err.message}`, { id: "ping-now" });
+    } finally {
+      setPingingNow(false);
+    }
+  };
 
   const checkBackend = async () => {
     setProbing(true);
@@ -268,6 +360,158 @@ export function SettingsGeneralPage() {
             >
               <Database className="h-3.5 w-3.5 mr-1.5" />
               {syncing ? "Syncing with Database..." : "Sync Jobs & Telemetry from Backend"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Keep-Alive Self-Pinger (No Sleep Engine) Card */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-xs font-mono">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-foreground text-background">
+                <Zap className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold font-display text-foreground flex items-center gap-2">
+                  No-Sleep Self-Pinger (Keep-Alive Engine)
+                  {selfPinger.enabled && (
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded-full font-sans font-medium">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Active
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-muted-foreground font-sans">
+                  Prevents free-tier cloud containers (Render, Vercel, Railway) from sleeping by sending periodic keep-alive pings.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono text-muted-foreground">
+                {selfPinger.enabled ? "Enabled" : "Disabled"}
+              </span>
+              <Switch
+                checked={selfPinger.enabled}
+                onCheckedChange={handleToggleSelfPinger}
+                disabled={savingPinger}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+            <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 sm:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">Target Keep-Alive Ping URL</span>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  Default: {selfPinger.activeUrl || "http://127.0.0.1:5000/api/health"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={selfPinger.targetUrl}
+                  onChange={(e) => setSelfPinger((prev) => ({ ...prev, targetUrl: e.target.value }))}
+                  className="text-xs font-mono bg-background"
+                  placeholder="https://your-app.onrender.com/api/health (Leave blank for internal)"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={savingPinger}
+                  onClick={handleSavePingerConfig}
+                  className="text-xs font-mono shrink-0"
+                >
+                  Save Target
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 space-y-1">
+              <span className="text-[11px] text-muted-foreground block">Ping Interval</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="30"
+                  step="10"
+                  value={Math.round(selfPinger.intervalMs / 1000)}
+                  onChange={(e) =>
+                    setSelfPinger((prev) => ({
+                      ...prev,
+                      intervalMs: Math.max(30, Number(e.target.value)) * 1000,
+                    }))
+                  }
+                  className="text-xs font-mono bg-background h-8 max-w-[100px]"
+                />
+                <span className="text-xs text-muted-foreground">seconds ({Math.round(selfPinger.intervalMs / 60000)}m)</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={savingPinger}
+                  onClick={handleSavePingerConfig}
+                  className="text-xs font-mono h-8 px-2 ml-auto"
+                >
+                  Update
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-paper-sunken/40 p-3">
+              <span className="text-[11px] text-muted-foreground block mb-0.5">Last Ping Status</span>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={
+                    selfPinger.lastPingStatus === "success"
+                      ? "default"
+                      : selfPinger.lastPingStatus === "failed"
+                      ? "destructive"
+                      : "secondary"
+                  }
+                  className="text-[10px]"
+                >
+                  {selfPinger.lastPingStatus.toUpperCase()}
+                </Badge>
+                {selfPinger.lastPingDurationMs > 0 && (
+                  <span className="text-xs text-emerald-500 font-semibold">{selfPinger.lastPingDurationMs} ms</span>
+                )}
+                {selfPinger.totalPings > 0 && (
+                  <span className="text-[11px] text-muted-foreground ml-auto font-sans">
+                    Total: {selfPinger.totalPings}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {selfPinger.lastPingAt && (
+              <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 sm:col-span-2 flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Last Ping Dispatched:</span>
+                <span className="font-semibold text-foreground">{new Date(selfPinger.lastPingAt).toLocaleTimeString()} ({new Date(selfPinger.lastPingAt).toLocaleDateString()})</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pingingNow}
+              onClick={handlePingNow}
+              className="text-xs font-mono border-border"
+            >
+              <Activity className={`h-3.5 w-3.5 mr-1.5 text-cobalt ${pingingNow ? "animate-spin" : ""}`} />
+              {pingingNow ? "Pinging Target..." : "Send Test Ping Now"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={fetchSelfPinger}
+              className="text-xs font-mono text-muted-foreground"
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Refresh Telemetry
             </Button>
           </div>
         </div>

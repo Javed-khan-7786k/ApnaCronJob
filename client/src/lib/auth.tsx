@@ -33,6 +33,7 @@ export interface SignUpData {
   password?: string;
   workspace?: string;
   telegramChatId?: string;
+  username?: string;
 }
 
 export interface AuthContextValue {
@@ -178,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(res.error || "Invalid username/email or password.");
       },
 
-      signUp: async ({ name, email, password, workspace, telegramChatId }) => {
+      signUp: async ({ name, email, password, workspace, telegramChatId, username }) => {
         const trimmedName = (name || "").trim();
         const trimmedEmail = (email || "").trim();
         const trimmedPass = (password || "").trim();
@@ -191,9 +192,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Password must be at least 6 characters.");
         }
 
-        const username = trimmedName.toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 30) || "operator";
+        let cleanUsername = (username || trimmedName || trimmedEmail.split("@")[0])
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "_")
+          .slice(0, 20);
+        if (cleanUsername.length < 3) cleanUsername = "user_" + cleanUsername;
+
         const res = await apiClient.auth.register({
-          username,
+          username: cleanUsername,
           email: trimmedEmail.toLowerCase(),
           password: trimmedPass,
           telegramChatId: telegramChatId || "",
