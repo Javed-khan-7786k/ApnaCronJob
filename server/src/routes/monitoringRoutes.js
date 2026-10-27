@@ -20,10 +20,14 @@ router.get('/overview', authenticateToken, async (req, res, next) => {
     let recentExecutions = [];
 
     if (mongoose.connection && mongoose.connection.readyState === 1) {
-      [jobs, recentExecutions] = await Promise.all([
-        Job.find(),
-        Execution.find({ durationMs: { $gt: 0 } }).sort({ createdAt: -1 }).limit(100).select('durationMs status'),
-      ]);
+      const jobQuery = req.user && req.user.role !== 'admin' ? { createdBy: req.user._id } : {};
+      jobs = await Job.find(jobQuery);
+      const userJobIds = jobs.map(j => j._id);
+      const execQuery = { durationMs: { $gt: 0 } };
+      if (req.user && req.user.role !== 'admin') {
+        execQuery.jobId = { $in: userJobIds };
+      }
+      recentExecutions = await Execution.find(execQuery).sort({ createdAt: -1 }).limit(100).select('durationMs status');
     }
 
     // Calculate P95 Latency

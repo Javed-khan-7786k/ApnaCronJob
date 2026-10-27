@@ -30,7 +30,9 @@ export function ConnectedIntegrationsPage() {
     const updated = DataStore.toggleIntegration(id);
     if (updated) {
       setIntegrations(DataStore.getIntegrations());
-      toast.info(`Integration “${updated.name}” ${updated.connected ? "connected" : "disconnected"}`);
+      toast.info(
+        `Integration “${updated.name}” ${updated.connected ? "connected" : "disconnected"}`,
+      );
     }
   };
 
@@ -68,7 +70,9 @@ export function ConnectedIntegrationsPage() {
               </div>
 
               <div className="pt-3 border-t border-border/60 flex items-center justify-between">
-                <span className={`text-xs font-mono font-semibold ${item.connected ? "text-emerald-600" : "text-muted-foreground"}`}>
+                <span
+                  className={`text-xs font-mono font-semibold ${item.connected ? "text-emerald-600" : "text-muted-foreground"}`}
+                >
                   {item.connected ? "● Connected" : "○ Disconnected"}
                 </span>
 

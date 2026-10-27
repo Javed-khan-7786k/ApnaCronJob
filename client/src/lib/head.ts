@@ -31,4 +31,3 @@ export function pageHead(
   if (noIndex) meta.push({ name: "robots", content: "noindex" });
   return { meta };
 }
-

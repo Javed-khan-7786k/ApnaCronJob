@@ -24,10 +24,13 @@ export function getNextRuns(
 ): Date[] {
   const out: Date[] = [];
   try {
-    const parsed = CronExpressionParser.parse(expr.trim(), {
+    const parserOpts: { currentDate: Date; tz?: string } = {
       currentDate: opts.fromDate ?? new Date(),
-      tz: opts.timeZone,
-    });
+    };
+    if (opts.timeZone) {
+      parserOpts.tz = opts.timeZone;
+    }
+    const parsed = CronExpressionParser.parse(expr.trim(), parserOpts);
     for (let i = 0; i < (opts.count ?? 5); i++) {
       out.push(parsed.next().toDate());
     }
@@ -38,30 +41,41 @@ export function getNextRuns(
 }
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
-const DAY_NAMES = [
-  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-];
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 type Fields = { minute: string; hour: string; dom: string; month: string; dow: string };
 
 function splitFields(expr: string): Fields | null {
   const parts = expr.trim().split(/\s+/);
   if (parts.length !== 5) return null;
-  return { minute: parts[0], hour: parts[1], dom: parts[2], month: parts[3], dow: parts[4] };
+  const [minute, hour, dom, month, dow] = parts;
+  if (!minute || !hour || !dom || !month || !dow) return null;
+  return { minute, hour, dom, month, dow };
 }
 
 function isEvery(field: string) {
-  return field === "*" || field === "0" && false;
+  return field === "*" || (field === "0" && false);
 }
 
 function describeList(field: string, names: string[]): string | null {
   if (field === "*") return null;
   const nums = field.split(",").map((n) => Number(n));
   if (nums.some((n) => !Number.isInteger(n))) return null;
-  if (nums.length === 1) return names[nums[0]] ?? String(nums[0]);
+  const first = nums[0];
+  if (first !== undefined && nums.length === 1) return names[first] ?? String(first);
   const labels = nums.map((n) => names[n] ?? String(n));
   if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
   return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
@@ -144,7 +158,10 @@ export function humanizeCron(expr: string): string {
   // fixed daily time(s): "30 8,18 * * *"
   if (!Number.isNaN(hourNum) && !Number.isNaN(minNum) && /^[\d,]+$/.test(hour)) {
     const pad = (n: number) => String(n).padStart(2, "0");
-    const times = hour.split(",").map((h) => `${pad(Number(h))}:${pad(minNum)}`).join(", ");
+    const times = hour
+      .split(",")
+      .map((h) => `${pad(Number(h))}:${pad(minNum)}`)
+      .join(", ");
     const domNote = dom === "*" ? "" : ` on day ${dom} of the month`;
     const monthNote = month === "*" ? "" : ` in ${describeList(month, MONTH_NAMES) ?? month}`;
     if (dow === "*") {

@@ -21,7 +21,9 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <p className="eyebrow">Error 404</p>
-        <h1 className="mt-3 font-display text-7xl font-semibold tracking-tight text-foreground">404</h1>
+        <h1 className="mt-3 font-display text-7xl font-semibold tracking-tight text-foreground">
+          404
+        </h1>
         <h2 className="mt-4 font-display text-xl font-semibold text-foreground">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
@@ -133,4 +135,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

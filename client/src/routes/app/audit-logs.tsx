@@ -15,7 +15,8 @@ export const Route = createFileRoute("/app/audit-logs")({
   head: () =>
     pageHead({
       title: "Audit Logs — AapnaCronJob Console",
-      description: "Searchable compliance audit log of all schedule changes, rotations, and member invites.",
+      description:
+        "Searchable compliance audit log of all schedule changes, rotations, and member invites.",
     }),
   component: AuditLogsPage,
 });
@@ -32,7 +33,13 @@ export function AuditLogsPage() {
     });
   }, []);
 
-  const actors = ["all", "Alex Rivera", "Priya Sharma", "Marcus Chen", "You", "System"];
+  const actors = useMemo(() => {
+    const set = new Set<string>(["all"]);
+    entries.forEach((e) => {
+      if (e.actor) set.add(e.actor);
+    });
+    return Array.from(set);
+  }, [entries]);
 
   const filtered = useMemo(() => {
     return entries.filter((item) => {
@@ -49,7 +56,8 @@ export function AuditLogsPage() {
     const csvRows = [
       ["Timestamp", "Actor", "Action", "Target", "Kind"].join(","),
       ...filtered.map(
-        (e) => `"${relativeLabel(e.minutesAgo)}","${e.actor}","${e.action}","${e.target}","${e.kind}"`,
+        (e) =>
+          `"${relativeLabel(e.minutesAgo)}","${e.actor}","${e.action}","${e.target}","${e.kind}"`,
       ),
     ].join("\n");
 
@@ -79,12 +87,7 @@ export function AuditLogsPage() {
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            className="font-mono text-xs"
-          >
+          <Button variant="outline" size="sm" onClick={handleExport} className="font-mono text-xs">
             <Download className="h-3.5 w-3.5 mr-1.5" />
             Export CSV
           </Button>
@@ -132,18 +135,10 @@ export function AuditLogsPage() {
             <tbody className="divide-y divide-border/60">
               {filtered.map((entry) => (
                 <tr key={entry.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="p-3 text-muted-foreground">
-                    {relativeLabel(entry.minutesAgo)}
-                  </td>
-                  <td className="p-3 font-semibold text-foreground">
-                    {entry.actor}
-                  </td>
-                  <td className="p-3 text-foreground capitalize">
-                    {entry.action}
-                  </td>
-                  <td className="p-3 text-foreground font-mono">
-                    {entry.target}
-                  </td>
+                  <td className="p-3 text-muted-foreground">{relativeLabel(entry.minutesAgo)}</td>
+                  <td className="p-3 font-semibold text-foreground">{entry.actor}</td>
+                  <td className="p-3 text-foreground capitalize">{entry.action}</td>
+                  <td className="p-3 text-foreground font-mono">{entry.target}</td>
                   <td className="p-3 text-right">
                     <Badge variant="outline" className="text-[10px] font-mono">
                       {entry.kind}

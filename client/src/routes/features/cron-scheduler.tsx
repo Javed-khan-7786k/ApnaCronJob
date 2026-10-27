@@ -31,7 +31,8 @@ export function CronSchedulerFeaturePage() {
               Precision Cron Job Scheduler
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Deploy high-precision schedules across global regions without managing servers, systemd timers, or local crontabs.
+              Deploy high-precision schedules across global regions without managing servers,
+              systemd timers, or local crontabs.
             </p>
           </div>
 
@@ -50,7 +51,8 @@ export function CronSchedulerFeaturePage() {
               <Clock className="h-6 w-6 text-cobalt" />
               <h3 className="font-semibold text-sm text-foreground">Sub-Second Dispatch</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Atomic clock synchronization ensures dispatches execute within milliseconds of the target second.
+                Atomic clock synchronization ensures dispatches execute within milliseconds of the
+                target second.
               </p>
             </div>
 
@@ -58,7 +60,8 @@ export function CronSchedulerFeaturePage() {
               <Globe className="h-6 w-6 text-emerald-500" />
               <h3 className="font-semibold text-sm text-foreground">Timezone & DST Compensation</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Native support for all IANA timezones. Handles spring-forward and fall-back clock shifts flawlessly.
+                Native support for all IANA timezones. Handles spring-forward and fall-back clock
+                shifts flawlessly.
               </p>
             </div>
 
@@ -66,14 +69,18 @@ export function CronSchedulerFeaturePage() {
               <Shield className="h-6 w-6 text-amber-500" />
               <h3 className="font-semibold text-sm text-foreground">No Duplicate Executions</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Distributed leader leases guarantee that only one runner instance dispatches a scheduled event.
+                Distributed leader leases guarantee that only one runner instance dispatches a
+                scheduled event.
               </p>
             </div>
           </div>
 
           <div className="text-center pt-8">
             <Link to="/app/jobs/new">
-              <Button size="lg" className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90">
+              <Button
+                size="lg"
+                className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90"
+              >
                 Create Your First Scheduled Job →
               </Button>
             </Link>

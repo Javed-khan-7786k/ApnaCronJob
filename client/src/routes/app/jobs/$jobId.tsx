@@ -66,16 +66,21 @@ export function JobDetailPage() {
 
   // Next runs
   const nextRuns = useMemo(() => {
+    if (!job?.cron) return [];
     return getNextRuns(job.cron, { count: 5, timeZone: job.timezone });
-  }, [job.cron, job.timezone]);
+  }, [job?.cron, job?.timezone]);
 
   // Executions matching this job
   const jobExecutions = useMemo(() => {
+    if (!job) return [];
     return executions.filter((e) => e.jobId === job.id || e.jobName === job.name);
   }, [executions, job]);
 
   const handleRunNow = async () => {
-    toast.loading(`Dispatching trigger for “${job.name}” via Backend Engine...`, { id: `run-${job.id}` });
+    if (!job) return;
+    toast.loading(`Dispatching trigger for “${job.name}” via Backend Engine...`, {
+      id: `run-${job.id}`,
+    });
     try {
       const exec = await DataStore.runJobNow(job.id);
       const updated = DataStore.getJob(job.id);
@@ -91,12 +96,15 @@ export function JobDetailPage() {
       const updated = DataStore.getJob(job.id);
       if (updated) setJob(updated);
       setExecutions(DataStore.getExecutions());
-      toast.success(`Trigger dispatched for “${job.name}”! Status: 200 OK (${latency}ms)`, { id: `run-${job.id}` });
+      toast.success(`Trigger dispatched for “${job.name}”! Status: 200 OK (${latency}ms)`, {
+        id: `run-${job.id}`,
+      });
     }
   };
 
-  const handleToggle = () => {
-    const updated = DataStore.toggleJob(job.id);
+  const handleToggle = async () => {
+    if (!job) return;
+    const updated = await DataStore.toggleJob(job.id);
     if (updated) {
       setJob(updated);
       toast.info(`Job schedule is now ${updated.enabled ? "active" : "paused"}`);
@@ -104,17 +112,33 @@ export function JobDetailPage() {
   };
 
   const copyUrl = () => {
+    if (!job?.url) return;
     navigator.clipboard.writeText(job.url);
     toast.success("Target URL copied to clipboard");
   };
 
+  if (!job) {
+    return (
+      <AppShell
+        breadcrumbs={[{ label: "Scheduled Jobs", to: "/app/jobs" }, { label: "Job Not Found" }]}
+      >
+        <div className="rounded-xl border border-border bg-card p-12 text-center space-y-4">
+          <p className="font-display text-xl font-bold text-foreground">Job Not Found</p>
+          <p className="text-xs text-muted-foreground font-sans">
+            The requested schedule could not be located in local or backend records.
+          </p>
+          <Link to="/app/jobs">
+            <Button size="sm" variant="outline" className="text-xs font-mono">
+              Return to All Jobs
+            </Button>
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
-    <AppShell
-      breadcrumbs={[
-        { label: "Scheduled Jobs", to: "/app/jobs" },
-        { label: job.name },
-      ]}
-    >
+    <AppShell breadcrumbs={[{ label: "Scheduled Jobs", to: "/app/jobs" }, { label: job.name }]}>
       <div className="space-y-6">
         {/* Back Link & Title */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-6">
@@ -221,9 +245,7 @@ export function JobDetailPage() {
                     <Badge variant="outline" className="font-mono text-xs uppercase">
                       {job.method}
                     </Badge>
-                    <span className="font-mono text-xs text-foreground truncate">
-                      {job.url}
-                    </span>
+                    <span className="font-mono text-xs text-foreground truncate">{job.url}</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -238,19 +260,29 @@ export function JobDetailPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono pt-2">
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase block">Schedule:</span>
+                    <span className="text-[10px] text-muted-foreground uppercase block">
+                      Schedule:
+                    </span>
                     <span className="font-semibold text-foreground">{job.cron}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase block">Timezone:</span>
+                    <span className="text-[10px] text-muted-foreground uppercase block">
+                      Timezone:
+                    </span>
                     <span className="text-foreground">{job.timezone}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase block">Retries:</span>
-                    <span className="text-foreground">{job.maxRetries}x ({job.retryBackoff})</span>
+                    <span className="text-[10px] text-muted-foreground uppercase block">
+                      Retries:
+                    </span>
+                    <span className="text-foreground">
+                      {job.maxRetries}x ({job.retryBackoff})
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase block">Timeout:</span>
+                    <span className="text-[10px] text-muted-foreground uppercase block">
+                      Timeout:
+                    </span>
                     <span className="text-foreground">{job.timeoutSeconds}s</span>
                   </div>
                 </div>
@@ -264,8 +296,7 @@ export function JobDetailPage() {
                     <span className="text-muted-foreground">Success Rate:</span>
                     <span className="text-emerald-600 font-bold text-sm">
                       {(
-                        (job.successCount /
-                          (job.successCount + job.failureCount || 1)) *
+                        (job.successCount / (job.successCount + job.failureCount || 1)) *
                         100
                       ).toFixed(1)}
                       %
@@ -279,15 +310,11 @@ export function JobDetailPage() {
                   </div>
                   <div className="flex items-baseline justify-between text-xs font-mono">
                     <span className="text-muted-foreground">Last Run Duration:</span>
-                    <span className="text-foreground">
-                      {formatDuration(job.lastDurationMs)}
-                    </span>
+                    <span className="text-foreground">{formatDuration(job.lastDurationMs)}</span>
                   </div>
                   <div className="flex items-baseline justify-between text-xs font-mono">
                     <span className="text-muted-foreground">Created:</span>
-                    <span className="text-muted-foreground">
-                      {job.createdAt.slice(0, 10)}
-                    </span>
+                    <span className="text-muted-foreground">{job.createdAt.slice(0, 10)}</span>
                   </div>
                 </div>
               </div>
@@ -309,7 +336,10 @@ export function JobDetailPage() {
                 {nextRuns.map((r, i) => {
                   const diff = r.getTime() - Date.now();
                   return (
-                    <div key={i} className="p-3 rounded-lg border border-border bg-paper-sunken text-center">
+                    <div
+                      key={i}
+                      className="p-3 rounded-lg border border-border bg-paper-sunken text-center"
+                    >
                       <span className="font-mono text-xs font-bold text-foreground block">
                         {formatInZone(r, job.timezone)}
                       </span>
@@ -342,9 +372,11 @@ export function JobDetailPage() {
             </div>
             <CronEditor
               value={job.cron}
-              onChange={(cron) => setJob({ ...job, cron })}
+              onChange={(cron) => setJob((prev) => (prev ? { ...prev, cron } : prev))}
               timezone={job.timezone}
-              onTimezoneChange={(timezone) => setJob({ ...job, timezone })}
+              onTimezoneChange={(timezone) =>
+                setJob((prev) => (prev ? { ...prev, timezone } : prev))
+              }
             />
           </div>
         )}

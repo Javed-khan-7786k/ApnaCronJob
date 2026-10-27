@@ -32,7 +32,8 @@ const INITIAL_TEAM = [
 // GET /api/team
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    let members = await TeamMember.find().sort({ createdAt: 1 });
+    const query = req.user && req.user.role !== 'admin' ? { invitedBy: req.user._id } : {};
+    let members = await TeamMember.find(query).sort({ createdAt: 1 });
 
     if (members.length === 0) {
       members = await TeamMember.create(
@@ -90,7 +91,11 @@ router.post('/invite', authenticateToken, async (req, res, next) => {
 // DELETE /api/team/:id
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const member = await TeamMember.findByIdAndDelete(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== 'admin') {
+      filter.invitedBy = req.user._id;
+    }
+    const member = await TeamMember.findOneAndDelete(filter);
     if (!member) {
       return res.status(404).json({ success: false, error: 'Team member not found' });
     }

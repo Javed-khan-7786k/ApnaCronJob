@@ -34,6 +34,8 @@ export function ApiKeysManagementPage() {
   const [label, setLabel] = useState("");
   const [selectedScopes, setSelectedScopes] = useState<string[]>(["jobs:read", "jobs:write"]);
 
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<ApiKey | null>(null);
+
   useEffect(() => {
     setKeys(DataStore.getApiKeys());
     DataStore.syncWithBackend().then((ok) => {
@@ -44,6 +46,11 @@ export function ApiKeysManagementPage() {
   const copyPrefix = (prefix: string) => {
     navigator.clipboard.writeText(`${prefix}••••••••••••••••`);
     toast.success("API key prefix copied to clipboard");
+  };
+
+  const copyFullKey = (keyText: string) => {
+    navigator.clipboard.writeText(keyText);
+    toast.success("Full secret key copied to clipboard!");
   };
 
   const handleRevoke = async (id: string, keyLabel: string) => {
@@ -71,7 +78,10 @@ export function ApiKeysManagementPage() {
     setKeys(DataStore.getApiKeys());
     setIsCreateOpen(false);
     setLabel("");
-    toast.success(`Production API Key “${created.label}” generated in database.`);
+    if (created.secretKey) {
+      setNewlyCreatedKey(created);
+    }
+    toast.success(`Production API Key “${created.label}” generated.`);
   };
 
   return (
@@ -106,9 +116,7 @@ export function ApiKeysManagementPage() {
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-foreground text-sm font-sans">
-                    {k.label}
-                  </span>
+                  <span className="font-semibold text-foreground text-sm font-sans">{k.label}</span>
                   <code className="rounded bg-paper-sunken border border-border px-1.5 py-0.5 text-muted-foreground">
                     {k.prefix}••••••••
                   </code>
@@ -156,12 +164,16 @@ export function ApiKeysManagementPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display font-bold text-lg">Generate Production API Key</DialogTitle>
+            <DialogTitle className="font-display font-bold text-lg">
+              Generate Production API Key
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleCreateSubmit} className="space-y-4 pt-2">
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Key Name / Description</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Key Name / Description
+              </label>
               <Input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
@@ -172,10 +184,15 @@ export function ApiKeysManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-mono uppercase text-muted-foreground">Permissions / Scopes</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground">
+                Permissions / Scopes
+              </label>
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                 {["jobs:read", "jobs:write", "executions:read", "keys:manage"].map((scope) => (
-                  <label key={scope} className="flex items-center gap-2 border border-border p-2 rounded-md cursor-pointer hover:bg-muted/30">
+                  <label
+                    key={scope}
+                    className="flex items-center gap-2 border border-border p-2 rounded-md cursor-pointer hover:bg-muted/30"
+                  >
                     <input
                       type="checkbox"
                       checked={selectedScopes.includes(scope)}
@@ -197,6 +214,46 @@ export function ApiKeysManagementPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Secret Key Revelation Modal */}
+      <Dialog open={!!newlyCreatedKey} onOpenChange={(open) => !open && setNewlyCreatedKey(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display font-bold text-lg text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              API Key Generated Successfully
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-xs text-muted-foreground">
+              Please copy your API key now. For security purposes,{" "}
+              <strong className="text-foreground">you will not be able to see it again</strong>.
+            </p>
+            <div className="p-3 bg-muted/50 rounded-md border border-border flex items-center justify-between gap-2">
+              <code className="text-xs font-mono font-bold text-foreground break-all select-all">
+                {newlyCreatedKey?.secretKey}
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => newlyCreatedKey?.secretKey && copyFullKey(newlyCreatedKey.secretKey)}
+                className="shrink-0 h-8"
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copy
+              </Button>
+            </div>
+            <DialogFooter>
+              <Button
+                className="w-full bg-foreground text-background"
+                onClick={() => setNewlyCreatedKey(null)}
+              >
+                I have saved my key
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </AppShell>

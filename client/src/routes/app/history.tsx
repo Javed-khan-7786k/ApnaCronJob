@@ -44,16 +44,12 @@ export function HistoryPage() {
               Execution Logs & Audit Stream
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
-              Detailed logs of every HTTP trigger, status code, response time, and retry attempt across all active runners.
+              Detailed logs of every HTTP trigger, status code, response time, and retry attempt
+              across all active runners.
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="font-mono text-xs"
-          >
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="font-mono text-xs">
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Refresh Telemetry
           </Button>

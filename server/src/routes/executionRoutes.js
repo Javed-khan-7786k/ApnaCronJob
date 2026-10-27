@@ -13,7 +13,25 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const { jobId, status, triggerSource, page = 1, limit = 50 } = req.query;
     const query = {};
 
-    if (jobId) query.jobId = jobId;
+    if (req.user && req.user.role !== 'admin') {
+      const userJobs = await Job.find({ createdBy: req.user._id }).select('_id');
+      const userJobIds = userJobs.map(j => j._id);
+      if (jobId) {
+        if (!userJobIds.some(id => String(id) === String(jobId))) {
+          return res.json({
+            success: true,
+            data: [],
+            pagination: { page: 1, limit: Number(limit) || 50, total: 0, pages: 0 },
+          });
+        }
+        query.jobId = jobId;
+      } else {
+        query.jobId = { $in: userJobIds };
+      }
+    } else if (jobId) {
+      query.jobId = jobId;
+    }
+
     if (status) query.status = status;
     if (triggerSource) query.triggerSource = triggerSource;
 
@@ -52,6 +70,14 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
     if (!execution) {
       return res.status(404).json({ success: false, error: 'Execution record not found' });
     }
+
+    if (req.user && req.user.role !== 'admin') {
+      const parentJob = await Job.findById(execution.jobId);
+      if (!parentJob || !parentJob.createdBy || String(parentJob.createdBy) !== String(req.user._id)) {
+        return res.status(404).json({ success: false, error: 'Execution record not found' });
+      }
+    }
+
     res.json({ success: true, data: execution });
   } catch (err) {
     next(err);
@@ -69,6 +95,12 @@ router.post('/:id/retry', authenticateToken, async (req, res, next) => {
     const job = await Job.findById(execution.jobId);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Parent job was not found' });
+    }
+
+    if (req.user && req.user.role !== 'admin') {
+      if (!job.createdBy || String(job.createdBy) !== String(req.user._id)) {
+        return res.status(404).json({ success: false, error: 'Parent job was not found' });
+      }
     }
 
     execution.logs.push({
@@ -103,11 +135,17 @@ router.delete('/purge', authenticateToken, async (req, res, next) => {
   try {
     const { days = 30 } = req.query;
     const thresholdDate = new Date(Date.now() - (parseInt(days, 10) * 86400000));
-
-    const result = await Execution.deleteMany({
+    const deleteQuery = {
       createdAt: { $lt: thresholdDate },
       status: { $in: ['completed', 'failed'] },
-    });
+    };
+
+    if (req.user && req.user.role !== 'admin') {
+      const userJobs = await Job.find({ createdBy: req.user._id }).select('_id');
+      deleteQuery.jobId = { $in: userJobs.map(j => j._id) };
+    }
+
+    const result = await Execution.deleteMany(deleteQuery);
 
     await logAuditEvent({
       userId: req.user._id,

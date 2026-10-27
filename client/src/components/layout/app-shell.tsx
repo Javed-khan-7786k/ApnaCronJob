@@ -41,11 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface NavItem {
   label: string;
@@ -115,12 +111,13 @@ export function AppShell({
     }
   }, [state, navigate]);
 
-  const initials = (user?.name || user?.email || "U")
-    .split(/[\s@._-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join("") || "U";
+  const initials =
+    (user?.name || user?.email || "U")
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() || "")
+      .join("") || "U";
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased">
@@ -146,7 +143,6 @@ export function AppShell({
                 </span>
               </div>
             </Link>
-
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -174,7 +170,10 @@ export function AppShell({
           {/* Quick Create Action in Sidebar */}
           <div className="p-3">
             <Link to="/app/jobs/new">
-              <Button size="sm" className="w-full bg-foreground text-background font-mono text-xs hover:bg-foreground/90">
+              <Button
+                size="sm"
+                className="w-full bg-foreground text-background font-mono text-xs hover:bg-foreground/90"
+              >
                 <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
                 New Scheduled Job
               </Button>
@@ -185,16 +184,12 @@ export function AppShell({
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-5 text-xs">
             {NAV_GROUPS.map((group) => (
               <div key={group.heading}>
-                <span className="eyebrow block px-2 mb-1.5 opacity-70">
-                  {group.heading}
-                </span>
+                <span className="eyebrow block px-2 mb-1.5 opacity-70">{group.heading}</span>
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     const isActive =
-                      item.to === "/app"
-                        ? currentPath === "/app"
-                        : currentPath.startsWith(item.to);
+                      item.to === "/app" ? currentPath === "/app" : currentPath.startsWith(item.to);
 
                     return (
                       <Link
@@ -207,7 +202,9 @@ export function AppShell({
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <Icon className={`h-4 w-4 ${isActive ? "text-background" : "text-muted-foreground"}`} />
+                          <Icon
+                            className={`h-4 w-4 ${isActive ? "text-background" : "text-muted-foreground"}`}
+                          />
                           <span>{item.label}</span>
                         </div>
                         {item.badge && (
@@ -329,7 +326,9 @@ export function AppShell({
                 <PopoverContent align="end" className="w-80 p-0 text-xs font-mono">
                   <div className="p-3 border-b border-border flex items-center justify-between">
                     <span className="font-semibold text-foreground">Live Telemetry Alerts</span>
-                    <Badge variant="outline" className="text-[10px]">3 New</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      3 New
+                    </Badge>
                   </div>
 
                   <div className="divide-y divide-border/60 max-h-64 overflow-y-auto">
@@ -365,7 +364,11 @@ export function AppShell({
 
               {/* Public Website Link */}
               <Link to="/">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs font-mono text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:inline-flex text-xs font-mono text-muted-foreground"
+                >
                   <span>Home</span>
                   <ExternalLink className="h-3 w-3 ml-1" />
                 </Button>
@@ -375,9 +378,7 @@ export function AppShell({
 
           {/* Main Route Content */}
           <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl space-y-6">
-              {children}
-            </div>
+            <div className="mx-auto max-w-7xl space-y-6">{children}</div>
           </main>
         </div>
       </div>
@@ -401,11 +402,11 @@ export function AppShell({
             </div>
 
             <div className="py-2">
-              <Link
-                to="/app/jobs/new"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Button size="sm" className="w-full bg-foreground text-background font-mono text-xs">
+              <Link to="/app/jobs/new" onClick={() => setSidebarOpen(false)}>
+                <Button
+                  size="sm"
+                  className="w-full bg-foreground text-background font-mono text-xs"
+                >
                   <PlusCircle className="h-3.5 w-3.5 mr-1" />
                   New Job
                 </Button>
@@ -415,9 +416,7 @@ export function AppShell({
             <div className="flex-1 overflow-y-auto space-y-4 text-xs font-mono py-2">
               {NAV_GROUPS.map((group) => (
                 <div key={group.heading}>
-                  <span className="eyebrow block mb-1 opacity-70">
-                    {group.heading}
-                  </span>
+                  <span className="eyebrow block mb-1 opacity-70">{group.heading}</span>
                   <div className="space-y-0.5">
                     {group.items.map((item) => (
                       <Link
@@ -447,10 +446,7 @@ export function AppShell({
       )}
 
       {/* Command Palette */}
-      <CommandPalette
-        open={commandPaletteOpen}
-        onOpenChange={setCommandPaletteOpen}
-      />
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
     </div>
   );
 }

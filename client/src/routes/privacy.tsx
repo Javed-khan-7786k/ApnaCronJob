@@ -29,30 +29,46 @@ export function PrivacyPage() {
 
           <div className="space-y-6">
             <section className="space-y-2">
-              <h2 className="font-display font-bold text-base text-foreground">1. Data Minimization & Collection</h2>
+              <h2 className="font-display font-bold text-base text-foreground">
+                1. Data Minimization & Collection
+              </h2>
               <p>
-                AapnaCronJob collects only information necessary to authenticate users, dispatch scheduled HTTP requests, and deliver incident alerts. We never sell, rent, or monetize your payload contents, scheduled endpoint URLs, or telemetry logs.
+                AapnaCronJob collects only information necessary to authenticate users, dispatch
+                scheduled HTTP requests, and deliver incident alerts. We never sell, rent, or
+                monetize your payload contents, scheduled endpoint URLs, or telemetry logs.
               </p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="font-display font-bold text-base text-foreground">2. Secret & Header Encryption</h2>
+              <h2 className="font-display font-bold text-base text-foreground">
+                2. Secret & Header Encryption
+              </h2>
               <p>
-                All sensitive HTTP headers, authorization bearer tokens, and webhook signing keys are stored in encrypted vaults using AES-256-GCM. Decryption keys are loaded into volatile runner memory only at dispatch time and discarded immediately.
+                All sensitive HTTP headers, authorization bearer tokens, and webhook signing keys
+                are stored in encrypted vaults using AES-256-GCM. Decryption keys are loaded into
+                volatile runner memory only at dispatch time and discarded immediately.
               </p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="font-display font-bold text-base text-foreground">3. Execution Log Retention</h2>
+              <h2 className="font-display font-bold text-base text-foreground">
+                3. Execution Log Retention
+              </h2>
               <p>
-                Execution telemetry, HTTP status codes, response times, and failure snippets are retained for the duration specified by your plan (7 days for Hobby, 90 days for Pro, 365 days for Enterprise). You may purge your history at any time via the Console.
+                Execution telemetry, HTTP status codes, response times, and failure snippets are
+                retained for the duration specified by your plan (7 days for Hobby, 90 days for Pro,
+                365 days for Enterprise). You may purge your history at any time via the Console.
               </p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="font-display font-bold text-base text-foreground">4. Sub-processors & Infrastructure</h2>
+              <h2 className="font-display font-bold text-base text-foreground">
+                4. Sub-processors & Infrastructure
+              </h2>
               <p>
-                AapnaCronJob relies on SOC2 Type II certified cloud providers (AWS, Cloudflare) for hosting distributed runners and routing DNS. All transfers occur over encrypted TLS 1.3 channels.
+                AapnaCronJob relies on SOC2 Type II certified cloud providers (AWS, Cloudflare) for
+                hosting distributed runners and routing DNS. All transfers occur over encrypted TLS
+                1.3 channels.
               </p>
             </section>
           </div>

@@ -300,36 +300,54 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
   }
 }
 
+let isPollingActive = false;
+let pollingTimeout = null;
+
+async function pollLoop(runJobNowCallback) {
+  if (!isPollingActive) return;
+  try {
+    const url = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=10`;
+    const res = await axios.get(url, { timeout: 15000 });
+    if (res.data?.ok && Array.isArray(res.data.result)) {
+      for (const update of res.data.result) {
+        lastUpdateId = Math.max(lastUpdateId, update.update_id);
+        if (update.message) {
+          await handleTelegramMessage(update.message, runJobNowCallback);
+        }
+      }
+    }
+  } catch (err) {
+    if (err.response?.status === 409) {
+      logger.warn('Telegram polling conflict detected (another instance active). Backing off for 15s.');
+      if (isPollingActive) {
+        pollingTimeout = setTimeout(() => pollLoop(runJobNowCallback), 15000);
+        return;
+      }
+    }
+  }
+
+  if (isPollingActive) {
+    pollingTimeout = setTimeout(() => pollLoop(runJobNowCallback), 1000);
+  }
+}
+
 /**
- * Starts long-polling for local development if enabled
+ * Starts sequential long-polling for local development if enabled
  * @param {Function} runJobNowCallback
  */
 export function startTelegramPolling(runJobNowCallback) {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_POLLING_ENABLED) return;
+  if (isPollingActive) return;
 
-  logger.info('Starting Telegram Bot long-polling service...');
-
-  pollingInterval = setInterval(async () => {
-    try {
-      const url = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
-      const res = await axios.get(url, { timeout: 10000 });
-      if (res.data?.ok && Array.isArray(res.data.result)) {
-        for (const update of res.data.result) {
-          lastUpdateId = Math.max(lastUpdateId, update.update_id);
-          if (update.message) {
-            await handleTelegramMessage(update.message, runJobNowCallback);
-          }
-        }
-      }
-    } catch (err) {
-      // Quiet poll errors
-    }
-  }, 3000);
+  isPollingActive = true;
+  logger.info('Starting Telegram Bot sequential long-polling service...');
+  pollLoop(runJobNowCallback);
 }
 
 export function stopTelegramPolling() {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-    pollingInterval = null;
+  isPollingActive = false;
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout);
+    pollingTimeout = null;
   }
 }

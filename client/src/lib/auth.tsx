@@ -159,7 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: res.user.id || res.user._id,
             name: res.user.username || res.user.name || loginIdentifier,
             email: res.user.email || loginIdentifier,
-            workspace: credentials?.workspace || `${res.user.username || "AapnaCronJob"}'s Workspace`,
+            workspace:
+              credentials?.workspace || `${res.user.username || "AapnaCronJob"}'s Workspace`,
             role: res.user.role || "user",
             telegramChatId: res.user.telegramChatId,
             telegramNotificationsEnabled: res.user.telegramNotificationsEnabled,
@@ -192,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Password must be at least 6 characters.");
         }
 
-        let cleanUsername = (username || trimmedName || trimmedEmail.split("@")[0])
+        let cleanUsername = (username || trimmedName || trimmedEmail.split("@")[0] || "user")
           .toLowerCase()
           .replace(/[^a-z0-9_-]/g, "_")
           .slice(0, 20);
@@ -249,11 +250,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile: async (partial) => {
         if (!user) return;
         try {
-          if (partial.telegramChatId !== undefined || partial.telegramNotificationsEnabled !== undefined) {
-            await apiClient.auth.updateProfile({
-              telegramChatId: partial.telegramChatId,
-              telegramNotificationsEnabled: partial.telegramNotificationsEnabled,
-            });
+          if (
+            partial.telegramChatId !== undefined ||
+            partial.telegramNotificationsEnabled !== undefined
+          ) {
+            const profilePayload: {
+              telegramChatId?: string;
+              telegramNotificationsEnabled?: boolean;
+            } = {};
+            if (partial.telegramChatId !== undefined) {
+              profilePayload.telegramChatId = partial.telegramChatId;
+            }
+            if (partial.telegramNotificationsEnabled !== undefined) {
+              profilePayload.telegramNotificationsEnabled = partial.telegramNotificationsEnabled;
+            }
+            await apiClient.auth.updateProfile(profilePayload);
           }
         } catch (err: any) {
           console.warn("Backend profile update error:", err.message);

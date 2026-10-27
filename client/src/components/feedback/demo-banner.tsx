@@ -19,7 +19,8 @@ export function DemoBanner({ className = "" }: { className?: string }) {
           AAPNACRONJOB RUNNER ENGINE:
         </span>
         <span className="text-muted-foreground truncate">
-          Active • 4 Runner Regions Online (Frankfurt, Mumbai, Virginia, Oregon) • Sub-second Precision Guard
+          Active • 4 Runner Regions Online (Frankfurt, Mumbai, Virginia, Oregon) • Sub-second
+          Precision Guard
         </span>
       </div>
 

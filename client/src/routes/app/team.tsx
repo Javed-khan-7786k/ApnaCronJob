@@ -99,9 +99,7 @@ export function TeamManagementPage() {
                   <span className="font-semibold text-sm text-foreground block font-sans">
                     {m.name}
                   </span>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {m.email}
-                  </span>
+                  <span className="text-xs font-mono text-muted-foreground">{m.email}</span>
                 </div>
               </div>
 
@@ -112,8 +110,8 @@ export function TeamManagementPage() {
                     m.role === "Owner"
                       ? "text-cobalt border-cobalt/30"
                       : m.role === "Admin"
-                      ? "text-purple-600 border-purple-500/30"
-                      : "text-muted-foreground"
+                        ? "text-purple-600 border-purple-500/30"
+                        : "text-muted-foreground"
                   }`}
                 >
                   {m.role}
@@ -140,12 +138,16 @@ export function TeamManagementPage() {
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display font-bold text-lg">Invite Workspace Collaborator</DialogTitle>
+            <DialogTitle className="font-display font-bold text-lg">
+              Invite Workspace Collaborator
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleInviteSubmit} className="space-y-4 pt-2">
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Full Name</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Full Name
+              </label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -156,7 +158,9 @@ export function TeamManagementPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Work Email</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Work Email
+              </label>
               <Input
                 type="email"
                 value={email}
@@ -168,7 +172,9 @@ export function TeamManagementPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Role & Permissions</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Role & Permissions
+              </label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as any)}

@@ -11,7 +11,8 @@ export const Route = createFileRoute("/docs/cron-expressions")({
   head: () =>
     pageHead({
       title: "Cron Expression Syntax Guide — AapnaCronJob Docs",
-      description: "Master standard 5-field cron syntax, step intervals, lists, ranges, and timezone rules.",
+      description:
+        "Master standard 5-field cron syntax, step intervals, lists, ranges, and timezone rules.",
     }),
   component: CronExpressionsDocPage,
 });
@@ -27,7 +28,9 @@ export function CronExpressionsDocPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-12">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-2">
-              <Link to="/docs" className="hover:text-foreground">Docs</Link>
+              <Link to="/docs" className="hover:text-foreground">
+                Docs
+              </Link>
               <span>/</span>
               <span>Cron Syntax</span>
             </div>
@@ -35,7 +38,8 @@ export function CronExpressionsDocPage() {
               Cron Expression Syntax Guide
             </h1>
             <p className="mt-2 text-sm text-muted-foreground font-sans">
-              AapnaCronJob adheres to the standard 5-field Unix cron specification with microsecond dispatch accuracy.
+              AapnaCronJob adheres to the standard 5-field Unix cron specification with microsecond
+              dispatch accuracy.
             </p>
           </div>
 
@@ -47,9 +51,7 @@ export function CronExpressionsDocPage() {
 
           {/* 5-Field Table */}
           <div className="space-y-4">
-            <h2 className="font-display text-2xl font-bold text-foreground">
-              The 5 Cron Fields
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-foreground">The 5 Cron Fields</h2>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <table className="w-full text-left text-xs font-mono">
                 <thead className="bg-paper-sunken border-b border-border text-muted-foreground uppercase text-[10px]">
@@ -98,24 +100,32 @@ export function CronExpressionsDocPage() {
 
           {/* Special characters explanation */}
           <div className="space-y-4 text-xs font-sans text-muted-foreground leading-relaxed">
-            <h2 className="font-display text-2xl font-bold text-foreground">
-              Special Operators
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-foreground">Special Operators</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl border border-border bg-card">
-                <code className="font-mono text-sm font-bold text-cobalt block mb-1">* (Asterisk)</code>
+                <code className="font-mono text-sm font-bold text-cobalt block mb-1">
+                  * (Asterisk)
+                </code>
                 Matches all values in the field. E.g. `*` in the hour field means "every hour".
               </div>
               <div className="p-4 rounded-xl border border-border bg-card">
-                <code className="font-mono text-sm font-bold text-cobalt block mb-1">, (Comma)</code>
-                Separates list values. E.g. `1,15,30` in the minute field runs at minutes 1, 15, and 30.
+                <code className="font-mono text-sm font-bold text-cobalt block mb-1">
+                  , (Comma)
+                </code>
+                Separates list values. E.g. `1,15,30` in the minute field runs at minutes 1, 15, and
+                30.
               </div>
               <div className="p-4 rounded-xl border border-border bg-card">
-                <code className="font-mono text-sm font-bold text-cobalt block mb-1">- (Hyphen)</code>
-                Defines ranges. E.g. `9-17` in the hour field specifies every hour from 9:00 through 17:00.
+                <code className="font-mono text-sm font-bold text-cobalt block mb-1">
+                  - (Hyphen)
+                </code>
+                Defines ranges. E.g. `9-17` in the hour field specifies every hour from 9:00 through
+                17:00.
               </div>
               <div className="p-4 rounded-xl border border-border bg-card">
-                <code className="font-mono text-sm font-bold text-cobalt block mb-1">/ (Slash)</code>
+                <code className="font-mono text-sm font-bold text-cobalt block mb-1">
+                  / (Slash)
+                </code>
                 Specifies step values. E.g. `*/10` in minute means "every 10 minutes".
               </div>
             </div>

@@ -39,7 +39,10 @@ export function CommandPalette({
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName))) {
+      if (
+        (e.key === "k" && (e.metaKey || e.ctrlKey)) ||
+        (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName))
+      ) {
         e.preventDefault();
         onOpenChange(!open);
       }
@@ -61,9 +64,7 @@ export function CommandPalette({
         <CommandEmpty>No results found.</CommandEmpty>
 
         <CommandGroup heading="Quick Actions">
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/jobs/new" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/jobs/new" }))}>
             <PlusCircle className="mr-2 h-4 w-4 text-cobalt" />
             <span>Create New Job</span>
           </CommandItem>
@@ -72,69 +73,47 @@ export function CommandPalette({
         <CommandSeparator />
 
         <CommandGroup heading="App Navigation">
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app" }))}>
             <LayoutDashboard className="mr-2 h-4 w-4" />
             <span>Dashboard Overview</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/jobs" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/jobs" }))}>
             <Clock className="mr-2 h-4 w-4" />
             <span>Scheduled Jobs</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/calendar" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/calendar" }))}>
             <Calendar className="mr-2 h-4 w-4" />
             <span>Calendar Schedule</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/history" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/history" }))}>
             <History className="mr-2 h-4 w-4" />
             <span>Execution History</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/monitoring" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/monitoring" }))}>
             <Activity className="mr-2 h-4 w-4 text-emerald-500" />
             <span>Monitoring & Health</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/notifications" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/notifications" }))}>
             <Bell className="mr-2 h-4 w-4" />
             <span>Notification Channels</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/integrations" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/integrations" }))}>
             <Blocks className="mr-2 h-4 w-4" />
             <span>Integrations</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/api-keys" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/api-keys" }))}>
             <Key className="mr-2 h-4 w-4" />
             <span>API Keys</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/team" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/team" }))}>
             <Users className="mr-2 h-4 w-4" />
             <span>Team Members</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/billing" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/billing" }))}>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing & Usage</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/app/settings" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/app/settings" }))}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Workspace Settings</span>
           </CommandItem>
@@ -143,31 +122,29 @@ export function CommandPalette({
         <CommandSeparator />
 
         <CommandGroup heading="Active Scheduled Jobs">
-          {DataStore.getJobs().slice(0, 5).map((job) => (
-            <CommandItem
-              key={job.id}
-              value={job.name}
-              onSelect={() =>
-                runCommand(() => navigate({ to: `/app/jobs/${job.id}` }))
-              }
-            >
-              <span className="h-2 w-2 rounded-full bg-cobalt mr-2" />
-              <div className="flex flex-col">
-                <span className="font-medium text-xs">{job.name}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {job.cron} • {job.url}
-                </span>
-              </div>
-            </CommandItem>
-          ))}
+          {DataStore.getJobs()
+            .slice(0, 5)
+            .map((job) => (
+              <CommandItem
+                key={job.id}
+                value={job.name}
+                onSelect={() => runCommand(() => navigate({ to: `/app/jobs/${job.id}` }))}
+              >
+                <span className="h-2 w-2 rounded-full bg-cobalt mr-2" />
+                <div className="flex flex-col">
+                  <span className="font-medium text-xs">{job.name}</span>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {job.cron} • {job.url}
+                  </span>
+                </div>
+              </CommandItem>
+            ))}
         </CommandGroup>
 
         <CommandSeparator />
 
         <CommandGroup heading="Documentation & Public">
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/docs" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/docs" }))}>
             <FileText className="mr-2 h-4 w-4" />
             <span>Documentation Hub</span>
           </CommandItem>
@@ -177,9 +154,7 @@ export function CommandPalette({
             <Clock className="mr-2 h-4 w-4" />
             <span>Cron Syntax Guide</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => navigate({ to: "/status" }))}
-          >
+          <CommandItem onSelect={() => runCommand(() => navigate({ to: "/status" }))}>
             <Activity className="mr-2 h-4 w-4 text-emerald-500" />
             <span>Service Status</span>
           </CommandItem>

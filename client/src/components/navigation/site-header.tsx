@@ -65,7 +65,6 @@ export function SiteHeader() {
             </div>
           </Link>
 
-
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
             <DropdownMenu>
@@ -81,7 +80,9 @@ export function SiteHeader() {
                     <Layers className="h-4 w-4 text-cobalt" />
                     <div>
                       <div className="font-semibold text-xs">All Features</div>
-                      <div className="text-[10px] text-muted-foreground">Complete platform overview</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Complete platform overview
+                      </div>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -90,7 +91,9 @@ export function SiteHeader() {
                     <Clock className="h-4 w-4 text-cobalt" />
                     <div>
                       <div className="font-semibold text-xs">Cron Scheduler</div>
-                      <div className="text-[10px] text-muted-foreground">Sub-second precision cron engine</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Sub-second precision cron engine
+                      </div>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -99,7 +102,9 @@ export function SiteHeader() {
                     <Activity className="h-4 w-4 text-emerald-500" />
                     <div>
                       <div className="font-semibold text-xs">HTTP Monitoring</div>
-                      <div className="text-[10px] text-muted-foreground">Global ping & uptime checks</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Global ping & uptime checks
+                      </div>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -108,7 +113,9 @@ export function SiteHeader() {
                     <Repeat className="h-4 w-4 text-amber-500" />
                     <div>
                       <div className="font-semibold text-xs">Retries & Backoff</div>
-                      <div className="text-[10px] text-muted-foreground">Exponential fault resilience</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Exponential fault resilience
+                      </div>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -117,7 +124,9 @@ export function SiteHeader() {
                     <Bell className="h-4 w-4 text-rose-500" />
                     <div>
                       <div className="font-semibold text-xs">Multi-channel Alerts</div>
-                      <div className="text-[10px] text-muted-foreground">Slack, Discord, PagerDuty</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Slack, Discord, PagerDuty
+                      </div>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -126,7 +135,9 @@ export function SiteHeader() {
                     <Webhook className="h-4 w-4 text-purple-500" />
                     <div>
                       <div className="font-semibold text-xs">Webhooks & Payloads</div>
-                      <div className="text-[10px] text-muted-foreground">HMAC-signed custom dispatches</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        HMAC-signed custom dispatches
+                      </div>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -197,7 +208,10 @@ export function SiteHeader() {
             </Link>
 
             <Link to="/app">
-              <Button size="sm" className="font-mono text-xs bg-foreground text-background hover:bg-foreground/90">
+              <Button
+                size="sm"
+                className="font-mono text-xs bg-foreground text-background hover:bg-foreground/90"
+              >
                 Launch Console
               </Button>
             </Link>

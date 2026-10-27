@@ -9,7 +9,8 @@ export const Route = createFileRoute("/features/notifications")({
   head: () =>
     pageHead({
       title: "Multi-Channel Notifications — AapnaCronJob",
-      description: "Route failure alerts and recovery events to Slack, Discord, PagerDuty, and webhooks.",
+      description:
+        "Route failure alerts and recovery events to Slack, Discord, PagerDuty, and webhooks.",
     }),
   component: NotificationsFeaturePage,
 });
@@ -27,7 +28,8 @@ export function NotificationsFeaturePage() {
               Instant Multi-Channel Alerting
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Never miss a silent cron failure. Route rich incident cards to the channels your engineering team already watches.
+              Never miss a silent cron failure. Route rich incident cards to the channels your
+              engineering team already watches.
             </p>
           </div>
 
@@ -36,15 +38,19 @@ export function NotificationsFeaturePage() {
               <MessageSquare className="h-6 w-6 text-cobalt" />
               <h3 className="font-semibold text-sm text-foreground">Slack & Discord Cards</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Structured message attachments display endpoint URL, HTTP response code, duration, and error snippet with direct links into execution logs.
+                Structured message attachments display endpoint URL, HTTP response code, duration,
+                and error snippet with direct links into execution logs.
               </p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-6 space-y-3">
               <AlertCircle className="h-6 w-6 text-rose-500" />
-              <h3 className="font-semibold text-sm text-foreground">PagerDuty Incident Escalation</h3>
+              <h3 className="font-semibold text-sm text-foreground">
+                PagerDuty Incident Escalation
+              </h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Trigger on-call rotations when critical backend jobs fail repeatedly. Automatically resolves PagerDuty incidents when the next run recovers.
+                Trigger on-call rotations when critical backend jobs fail repeatedly. Automatically
+                resolves PagerDuty incidents when the next run recovers.
               </p>
             </div>
 
@@ -52,14 +58,18 @@ export function NotificationsFeaturePage() {
               <CheckCircle2 className="h-6 w-6 text-emerald-500" />
               <h3 className="font-semibold text-sm text-foreground">Recovery Confirmations</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Know when things go green again. AapnaCronJob dispatches an all-clear notification immediately after a previously failed job completes successfully.
+                Know when things go green again. AapnaCronJob dispatches an all-clear notification
+                immediately after a previously failed job completes successfully.
               </p>
             </div>
           </div>
 
           <div className="text-center pt-8">
             <Link to="/app/notifications">
-              <Button size="lg" className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90">
+              <Button
+                size="lg"
+                className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90"
+              >
                 Configure Notification Channels →
               </Button>
             </Link>

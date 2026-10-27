@@ -11,12 +11,21 @@ import { logAuditEvent } from '../services/auditService.js';
 
 const router = express.Router();
 
-async function findJobDoc(id) {
+export function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findJobDoc(id, user = null) {
+  const query = {};
   if (mongoose.isValidObjectId(id)) {
-    const byId = await Job.findById(id);
-    if (byId) return byId;
+    query._id = id;
+  } else {
+    query.name = id;
   }
-  return await Job.findOne({ $or: [{ name: id }] });
+  if (user && user.role !== 'admin') {
+    query.createdBy = user._id;
+  }
+  return await Job.findOne(query);
 }
 
 /**
@@ -80,13 +89,27 @@ function normalizeJobInput(body) {
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
     const { search, tag, status, enabled, page = 1, limit = 100 } = req.query;
+
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: parseInt(limit, 10) || 100, total: 0, pages: 0 },
+      });
+    }
+
     const query = {};
 
+    if (req.user && req.user.role !== 'admin') {
+      query.createdBy = req.user._id;
+    }
+
     if (search) {
+      const safeSearch = escapeRegex(String(search).trim());
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { targetUrl: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { targetUrl: { $regex: safeSearch, $options: 'i' } },
+        { description: { $regex: safeSearch, $options: 'i' } },
       ];
     }
 
@@ -244,7 +267,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
 // GET /api/jobs/:id
 router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const job = await findJobDoc(req.params.id);
+    const job = await findJobDoc(req.params.id, req.user);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -310,7 +333,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
       updateDoc.nextRunAt = null;
     }
 
-    const existing = await findJobDoc(req.params.id);
+    const existing = await findJobDoc(req.params.id, req.user);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -335,7 +358,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 // DELETE /api/jobs/:id
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const existing = await findJobDoc(req.params.id);
+    const existing = await findJobDoc(req.params.id, req.user);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -361,7 +384,7 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
 // POST /api/jobs/:id/run
 router.post('/:id/run', authenticateToken, async (req, res, next) => {
   try {
-    const job = await findJobDoc(req.params.id);
+    const job = await findJobDoc(req.params.id, req.user);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -393,7 +416,7 @@ router.post('/:id/run', authenticateToken, async (req, res, next) => {
 
 const toggleJobHandler = async (req, res, next) => {
   try {
-    const job = await findJobDoc(req.params.id);
+    const job = await findJobDoc(req.params.id, req.user);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }
@@ -426,7 +449,7 @@ router.patch('/:id/toggle', authenticateToken, toggleJobHandler);
 // POST /api/jobs/:id/duplicate
 router.post('/:id/duplicate', authenticateToken, async (req, res, next) => {
   try {
-    const original = await Job.findById(req.params.id);
+    const original = await findJobDoc(req.params.id, req.user);
     if (!original) {
       return res.status(404).json({ success: false, error: 'Job not found' });
     }

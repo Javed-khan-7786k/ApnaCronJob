@@ -31,7 +31,10 @@ export function JobsListPage() {
           </div>
 
           <Link to="/app/jobs/new">
-            <Button size="sm" className="bg-foreground text-background font-mono text-xs hover:bg-foreground/90">
+            <Button
+              size="sm"
+              className="bg-foreground text-background font-mono text-xs hover:bg-foreground/90"
+            >
               <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
               New Scheduled Job
             </Button>

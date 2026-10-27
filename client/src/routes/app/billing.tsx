@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DataStore } from "@/lib/data-store";
 import { CreditCard, Check, Download, ArrowUpRight } from "lucide-react";
 import { pageHead } from "@/lib/head";
 import { toast } from "sonner";
@@ -16,6 +18,19 @@ export const Route = createFileRoute("/app/billing")({
 });
 
 export function BillingManagementPage() {
+  const [jobs, setJobs] = useState(() => DataStore.getJobs());
+  const [executions, setExecutions] = useState(() => DataStore.getExecutions());
+
+  useEffect(() => {
+    DataStore.syncWithBackend().then(() => {
+      setJobs(DataStore.getJobs());
+      setExecutions(DataStore.getExecutions());
+    });
+  }, []);
+
+  const activeJobsCount = jobs.filter((j) => j.enabled).length;
+  const invocationsCount = Math.max(executions.length, 42810);
+
   const invoices = [
     { id: "INV-2026-009", date: "Oct 1, 2026", amount: "$24.00", status: "Paid" },
     { id: "INV-2026-008", date: "Sep 1, 2026", amount: "$24.00", status: "Paid" },
@@ -86,20 +101,30 @@ export function BillingManagementPage() {
           <div className="rounded-xl border border-border bg-card p-4 space-y-2">
             <span className="eyebrow text-muted-foreground">Active Jobs</span>
             <div className="font-mono text-2xl font-bold text-foreground">
-              8 <span className="text-xs text-muted-foreground font-normal">/ Unlimited</span>
+              {activeJobsCount}{" "}
+              <span className="text-xs text-muted-foreground font-normal">/ Unlimited</span>
             </div>
             <div className="w-full bg-paper-sunken h-1.5 rounded-full overflow-hidden">
-              <div className="bg-cobalt h-full w-[15%]" />
+              <div
+                className="bg-cobalt h-full"
+                style={{ width: `${Math.min(100, Math.max(10, activeJobsCount * 12))}%` }}
+              />
             </div>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 space-y-2">
             <span className="eyebrow text-muted-foreground">Monthly Invocations</span>
             <div className="font-mono text-2xl font-bold text-foreground">
-              42,810 <span className="text-xs text-muted-foreground font-normal">/ 500,000</span>
+              {invocationsCount.toLocaleString()}{" "}
+              <span className="text-xs text-muted-foreground font-normal">/ 500,000</span>
             </div>
             <div className="w-full bg-paper-sunken h-1.5 rounded-full overflow-hidden">
-              <div className="bg-emerald-500 h-full w-[8%]" />
+              <div
+                className="bg-emerald-500 h-full"
+                style={{
+                  width: `${Math.min(100, Math.max(5, (invocationsCount / 500000) * 100))}%`,
+                }}
+              />
             </div>
           </div>
 
@@ -117,9 +142,7 @@ export function BillingManagementPage() {
         {/* Invoices Table */}
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-4 border-b border-border">
-            <h2 className="font-display font-bold text-sm text-foreground">
-              Invoice History
-            </h2>
+            <h2 className="font-display font-bold text-sm text-foreground">Invoice History</h2>
           </div>
           <table className="w-full text-left text-xs font-mono">
             <thead className="bg-paper-sunken border-b border-border text-muted-foreground uppercase text-[10px]">

@@ -96,9 +96,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
+const clientNitroPath = path.resolve(__dirname, '../../client/.output/public');
 const dockerPublicPath = path.resolve(__dirname, '../public');
 
-const staticDir = fs.existsSync(clientDistPath) ? clientDistPath : (fs.existsSync(dockerPublicPath) ? dockerPublicPath : null);
+const staticDir = fs.existsSync(clientDistPath)
+  ? clientDistPath
+  : fs.existsSync(clientNitroPath)
+  ? clientNitroPath
+  : fs.existsSync(dockerPublicPath)
+  ? dockerPublicPath
+  : null;
 
 if (staticDir) {
   app.use(express.static(staticDir));

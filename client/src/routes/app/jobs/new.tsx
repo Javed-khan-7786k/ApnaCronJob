@@ -14,12 +14,7 @@ export const Route = createFileRoute("/app/jobs/new")({
 
 export function NewJobPage() {
   return (
-    <AppShell
-      breadcrumbs={[
-        { label: "Scheduled Jobs", to: "/app/jobs" },
-        { label: "New Job" },
-      ]}
-    >
+    <AppShell breadcrumbs={[{ label: "Scheduled Jobs", to: "/app/jobs" }, { label: "New Job" }]}>
       <div className="space-y-6">
         <div className="border-b border-border/80 pb-6">
           <span className="eyebrow block mb-1">Create Job</span>

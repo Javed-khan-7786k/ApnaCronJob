@@ -27,7 +27,8 @@ export function RetriesFeaturePage() {
               Exponential Backoff & Smart Retries
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Protect your infrastructure from transient hiccups. Configure automatic retries with mathematically sound backoff curves and jitter.
+              Protect your infrastructure from transient hiccups. Configure automatic retries with
+              mathematically sound backoff curves and jitter.
             </p>
           </div>
 
@@ -36,7 +37,8 @@ export function RetriesFeaturePage() {
               <Repeat className="h-6 w-6 text-cobalt" />
               <h3 className="font-semibold text-sm text-foreground">Full Decorrelated Jitter</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Applies AWS recommended decorrelated jitter formulas to randomize retry timestamps, eliminating synchronized request stampedes on recovering servers.
+                Applies AWS recommended decorrelated jitter formulas to randomize retry timestamps,
+                eliminating synchronized request stampedes on recovering servers.
               </p>
             </div>
 
@@ -44,7 +46,8 @@ export function RetriesFeaturePage() {
               <Cpu className="h-6 w-6 text-amber-500" />
               <h3 className="font-semibold text-sm text-foreground">Configurable Retry Budgets</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Set retry counts from 0 to 5 per individual job. Distinguish between idempotent endpoints and non-idempotent webhooks safely.
+                Set retry counts from 0 to 5 per individual job. Distinguish between idempotent
+                endpoints and non-idempotent webhooks safely.
               </p>
             </div>
 
@@ -52,14 +55,18 @@ export function RetriesFeaturePage() {
               <ShieldAlert className="h-6 w-6 text-rose-500" />
               <h3 className="font-semibold text-sm text-foreground">Smart Error Classification</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Automatically retries HTTP 502, 503, 504, and network timeouts. Immediately halts retries on client errors (400, 401, 403, 404) to avoid log spam.
+                Automatically retries HTTP 502, 503, 504, and network timeouts. Immediately halts
+                retries on client errors (400, 401, 403, 404) to avoid log spam.
               </p>
             </div>
           </div>
 
           <div className="text-center pt-8">
             <Link to="/app">
-              <Button size="lg" className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90">
+              <Button
+                size="lg"
+                className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90"
+              >
                 Test Retry Engine in Developer Console →
               </Button>
             </Link>

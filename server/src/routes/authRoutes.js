@@ -266,22 +266,46 @@ router.get('/google/callback', async (req, res, next) => {
 // POST /api/auth/google
 router.post('/google', async (req, res, next) => {
   try {
-    const { email, name, googleId } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required for Google authentication.' });
+    const { credential, idToken } = req.body;
+    const tokenToVerify = credential || idToken;
+
+    if (!tokenToVerify) {
+      return res.status(401).json({
+        success: false,
+        error: 'Google ID token or credential is required for secure authentication.',
+      });
     }
 
-    let user = await User.findOne({ email: email.toLowerCase() });
+    let verifiedEmail = null;
+    try {
+      const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenToVerify)}`, {
+        timeout: 5000,
+      });
+      if (!googleRes.data || !googleRes.data.email || (googleRes.data.email_verified !== 'true' && googleRes.data.email_verified !== true)) {
+        return res.status(401).json({
+          success: false,
+          error: 'Google token verification failed: email unverified.',
+        });
+      }
+      verifiedEmail = googleRes.data.email.toLowerCase();
+    } catch (tokenErr) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired Google credential.',
+      });
+    }
+
+    let user = await User.findOne({ email: verifiedEmail });
     if (!user) {
-      const username = await generateUniqueUsername(email.split('@')[0]);
+      const username = await generateUniqueUsername(verifiedEmail.split('@')[0]);
       const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
       const hashedPassword = await hashPassword(randomPassword);
 
       user = await User.create({
         username,
-        email: email.toLowerCase(),
+        email: verifiedEmail,
         password: hashedPassword,
-        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'user',
+        role: verifiedEmail === 'javedkhan7786king@gmail.com' ? 'admin' : 'user',
         status: 'active',
       });
     }

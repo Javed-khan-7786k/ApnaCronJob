@@ -7,7 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { DataStore } from "@/lib/data-store";
 import { apiClient, type BackendHealth } from "@/lib/api-client";
-import { Settings, Globe, Shield, Save, Server, RefreshCw, CheckCircle2, AlertTriangle, Database, Wifi, Activity, Zap, Clock } from "lucide-react";
+import {
+  Settings,
+  Globe,
+  Shield,
+  Save,
+  Server,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+  Database,
+  Wifi,
+  Activity,
+  Zap,
+  Clock,
+} from "lucide-react";
 import { pageHead } from "@/lib/head";
 import { toast } from "sonner";
 
@@ -63,6 +77,13 @@ export function SettingsGeneralPage() {
     setWorkspaceName(s.workspaceName);
     setSupportEmail(s.supportEmail);
     setDefaultTimeout(s.defaultTimeout);
+
+    DataStore.syncWithBackend().then(() => {
+      const updated = DataStore.getSettings();
+      setWorkspaceName(updated.workspaceName);
+      setSupportEmail(updated.supportEmail);
+      setDefaultTimeout(updated.defaultTimeout);
+    });
 
     checkBackend();
     fetchSelfPinger();
@@ -152,7 +173,9 @@ export function SettingsGeneralPage() {
     try {
       const ok = await DataStore.syncWithBackend();
       if (ok) {
-        toast.success("All jobs, executions, and channels synchronized from MongoDB!", { id: "sync-settings" });
+        toast.success("All jobs, executions, and channels synchronized from MongoDB!", {
+          id: "sync-settings",
+        });
       } else {
         toast.error("Could not reach backend server. Using local cache.", { id: "sync-settings" });
       }
@@ -209,7 +232,10 @@ export function SettingsGeneralPage() {
         </div>
 
         {/* General Form */}
-        <form onSubmit={handleSave} className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-xs">
+        <form
+          onSubmit={handleSave}
+          className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-xs"
+        >
           <h2 className="text-sm font-bold font-display uppercase tracking-wider text-foreground">
             General Properties
           </h2>
@@ -250,7 +276,10 @@ export function SettingsGeneralPage() {
           </div>
 
           <div className="pt-2">
-            <Button type="submit" className="bg-foreground text-background font-mono text-xs hover:bg-foreground/90 font-semibold">
+            <Button
+              type="submit"
+              className="bg-foreground text-background font-mono text-xs hover:bg-foreground/90 font-semibold"
+            >
               <Save className="h-3.5 w-3.5 mr-1.5" />
               Save Changes
             </Button>
@@ -265,7 +294,9 @@ export function SettingsGeneralPage() {
                 <Server className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold font-display text-foreground">Backend Server Connection</h3>
+                <h3 className="text-sm font-bold font-display text-foreground">
+                  Backend Server Connection
+                </h3>
                 <p className="text-xs text-muted-foreground font-sans">
                   Express API Gateway & MongoDB Cluster status
                 </p>
@@ -280,8 +311,12 @@ export function SettingsGeneralPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
             <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 sm:col-span-2 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">Active REST API Base URL (From .env: VITE_API_URL)</span>
-                <span className="text-[10px] text-cobalt font-semibold font-mono">Dynamic Environment Config</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Active REST API Base URL (From .env: VITE_API_URL)
+                </span>
+                <span className="text-[10px] text-cobalt font-semibold font-mono">
+                  Dynamic Environment Config
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Input
@@ -325,18 +360,28 @@ export function SettingsGeneralPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-paper-sunken/40 p-3">
-              <span className="text-[11px] text-muted-foreground block mb-0.5">Roundtrip Latency</span>
+              <span className="text-[11px] text-muted-foreground block mb-0.5">
+                Roundtrip Latency
+              </span>
               <span className="font-semibold text-emerald-500">{backendHealth.latencyMs} ms</span>
             </div>
 
             <div className="rounded-lg border border-border bg-paper-sunken/40 p-3">
-              <span className="text-[11px] text-muted-foreground block mb-0.5">Service Identifier</span>
-              <span className="font-semibold text-foreground">{backendHealth.service || "aapna-cron-job"}</span>
+              <span className="text-[11px] text-muted-foreground block mb-0.5">
+                Service Identifier
+              </span>
+              <span className="font-semibold text-foreground">
+                {backendHealth.service || "aapna-cron-job"}
+              </span>
             </div>
 
             <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 sm:col-span-2">
-              <span className="text-[11px] text-muted-foreground block mb-0.5">Database Cluster</span>
-              <span className="font-semibold text-foreground">MongoDB Local (Port 27017 / apna_scheduler)</span>
+              <span className="text-[11px] text-muted-foreground block mb-0.5">
+                Database Cluster
+              </span>
+              <span className="font-semibold text-foreground">
+                MongoDB Local (Port 27017 / apna_scheduler)
+              </span>
             </div>
           </div>
 
@@ -382,7 +427,8 @@ export function SettingsGeneralPage() {
                   )}
                 </h3>
                 <p className="text-xs text-muted-foreground font-sans">
-                  Prevents free-tier cloud containers (Render, Vercel, Railway) from sleeping by sending periodic keep-alive pings.
+                  Prevents free-tier cloud containers (Render, Vercel, Railway) from sleeping by
+                  sending periodic keep-alive pings.
                 </p>
               </div>
             </div>
@@ -402,7 +448,9 @@ export function SettingsGeneralPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
             <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 sm:col-span-2 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">Target Keep-Alive Ping URL</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Target Keep-Alive Ping URL
+                </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
                   Default: {selfPinger.activeUrl || "http://127.0.0.1:5000/api/health"}
                 </span>
@@ -410,7 +458,9 @@ export function SettingsGeneralPage() {
               <div className="flex items-center gap-2">
                 <Input
                   value={selfPinger.targetUrl}
-                  onChange={(e) => setSelfPinger((prev) => ({ ...prev, targetUrl: e.target.value }))}
+                  onChange={(e) =>
+                    setSelfPinger((prev) => ({ ...prev, targetUrl: e.target.value }))
+                  }
                   className="text-xs font-mono bg-background"
                   placeholder="https://your-app.onrender.com/api/health (Leave blank for internal)"
                 />
@@ -443,7 +493,9 @@ export function SettingsGeneralPage() {
                   }
                   className="text-xs font-mono bg-background h-8 max-w-[100px]"
                 />
-                <span className="text-xs text-muted-foreground">seconds ({Math.round(selfPinger.intervalMs / 60000)}m)</span>
+                <span className="text-xs text-muted-foreground">
+                  seconds ({Math.round(selfPinger.intervalMs / 60000)}m)
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -458,22 +510,26 @@ export function SettingsGeneralPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-paper-sunken/40 p-3">
-              <span className="text-[11px] text-muted-foreground block mb-0.5">Last Ping Status</span>
+              <span className="text-[11px] text-muted-foreground block mb-0.5">
+                Last Ping Status
+              </span>
               <div className="flex items-center gap-2">
                 <Badge
                   variant={
                     selfPinger.lastPingStatus === "success"
                       ? "default"
                       : selfPinger.lastPingStatus === "failed"
-                      ? "destructive"
-                      : "secondary"
+                        ? "destructive"
+                        : "secondary"
                   }
                   className="text-[10px]"
                 >
                   {selfPinger.lastPingStatus.toUpperCase()}
                 </Badge>
                 {selfPinger.lastPingDurationMs > 0 && (
-                  <span className="text-xs text-emerald-500 font-semibold">{selfPinger.lastPingDurationMs} ms</span>
+                  <span className="text-xs text-emerald-500 font-semibold">
+                    {selfPinger.lastPingDurationMs} ms
+                  </span>
                 )}
                 {selfPinger.totalPings > 0 && (
                   <span className="text-[11px] text-muted-foreground ml-auto font-sans">
@@ -486,7 +542,10 @@ export function SettingsGeneralPage() {
             {selfPinger.lastPingAt && (
               <div className="rounded-lg border border-border bg-paper-sunken/40 p-3 sm:col-span-2 flex items-center justify-between text-[11px]">
                 <span className="text-muted-foreground">Last Ping Dispatched:</span>
-                <span className="font-semibold text-foreground">{new Date(selfPinger.lastPingAt).toLocaleTimeString()} ({new Date(selfPinger.lastPingAt).toLocaleDateString()})</span>
+                <span className="font-semibold text-foreground">
+                  {new Date(selfPinger.lastPingAt).toLocaleTimeString()} (
+                  {new Date(selfPinger.lastPingAt).toLocaleDateString()})
+                </span>
               </div>
             )}
           </div>
@@ -499,7 +558,9 @@ export function SettingsGeneralPage() {
               onClick={handlePingNow}
               className="text-xs font-mono border-border"
             >
-              <Activity className={`h-3.5 w-3.5 mr-1.5 text-cobalt ${pingingNow ? "animate-spin" : ""}`} />
+              <Activity
+                className={`h-3.5 w-3.5 mr-1.5 text-cobalt ${pingingNow ? "animate-spin" : ""}`}
+              />
               {pingingNow ? "Pinging Target..." : "Send Test Ping Now"}
             </Button>
 

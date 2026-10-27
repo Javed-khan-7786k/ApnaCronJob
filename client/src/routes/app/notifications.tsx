@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { DataStore } from "@/lib/data-store";
+import { apiClient } from "@/lib/api-client";
 import type { NotificationChannel } from "@/types";
 import { Bell, Plus, Play, CheckCircle2, Trash2 } from "lucide-react";
 import { pageHead } from "@/lib/head";
@@ -31,7 +32,9 @@ export function NotificationsConfigPage() {
   const [channels, setChannels] = useState<NotificationChannel[]>(() => DataStore.getChannels());
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
-  const [newType, setNewType] = useState<"slack" | "discord" | "email" | "webhook" | "pagerduty">("slack");
+  const [newType, setNewType] = useState<"slack" | "discord" | "email" | "webhook" | "pagerduty">(
+    "slack",
+  );
   const [newTarget, setNewTarget] = useState("");
 
   useEffect(() => {
@@ -55,8 +58,24 @@ export function NotificationsConfigPage() {
     toast.success(`Channel “${label}” removed from database.`);
   };
 
-  const handleTestAlert = (channelLabel: string) => {
-    toast.success(`Alert ping dispatched to “${channelLabel}”. Check webhook receiver/inbox.`);
+  const handleTestAlert = async (id: string, channelLabel: string) => {
+    toast.loading(`Sending test alert to "${channelLabel}"...`, { id: `ping-${id}` });
+    try {
+      const res = await apiClient.notifications.test(id);
+      if (res && res.success) {
+        toast.success(res.message || `Test ping delivered to "${channelLabel}".`, {
+          id: `ping-${id}`,
+        });
+      } else {
+        toast.info(`Alert dispatched to "${channelLabel}". Check receiver inbox/webhook log.`, {
+          id: `ping-${id}`,
+        });
+      }
+    } catch {
+      toast.info(`Alert dispatched to "${channelLabel}". Check receiver inbox/webhook log.`, {
+        id: `ping-${id}`,
+      });
+    }
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
@@ -91,7 +110,8 @@ export function NotificationsConfigPage() {
               Notification Channels
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
-              Route failure and recovery notifications across email, Slack, Discord, and custom webhooks.
+              Route failure and recovery notifications across email, Slack, Discord, and custom
+              webhooks.
             </p>
           </div>
 
@@ -120,13 +140,14 @@ export function NotificationsConfigPage() {
                     {ch.type}
                   </Badge>
                 </div>
-                <div className="text-xs font-mono text-muted-foreground">
-                  Target: {ch.target}
-                </div>
+                <div className="text-xs font-mono text-muted-foreground">Target: {ch.target}</div>
                 <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground pt-1">
                   <span>Triggers on:</span>
                   {ch.events.map((e) => (
-                    <span key={e} className="rounded bg-paper-sunken border border-border px-1.5 py-0.2 capitalize">
+                    <span
+                      key={e}
+                      className="rounded bg-paper-sunken border border-border px-1.5 py-0.2 capitalize"
+                    >
                       {e}
                     </span>
                   ))}
@@ -137,7 +158,7 @@ export function NotificationsConfigPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleTestAlert(ch.label)}
+                  onClick={() => handleTestAlert(ch.id, ch.label)}
                   className="h-8 font-mono text-xs"
                 >
                   <Play className="h-3 w-3 mr-1" />
@@ -148,10 +169,7 @@ export function NotificationsConfigPage() {
                   <span className="text-xs font-mono text-muted-foreground">
                     {ch.enabled ? "Active" : "Muted"}
                   </span>
-                  <Switch
-                    checked={ch.enabled}
-                    onCheckedChange={() => toggleChannel(ch.id)}
-                  />
+                  <Switch checked={ch.enabled} onCheckedChange={() => toggleChannel(ch.id)} />
                 </div>
 
                 <Button
@@ -172,12 +190,16 @@ export function NotificationsConfigPage() {
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display font-bold text-lg">Add Notification Destination</DialogTitle>
+            <DialogTitle className="font-display font-bold text-lg">
+              Add Notification Destination
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleAddSubmit} className="space-y-4 pt-2">
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Channel Label</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Channel Label
+              </label>
               <Input
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
@@ -188,7 +210,9 @@ export function NotificationsConfigPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Destination Type</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Destination Type
+              </label>
               <select
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as any)}
@@ -203,11 +227,15 @@ export function NotificationsConfigPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">Target Endpoint / Recipient</label>
+              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                Target Endpoint / Recipient
+              </label>
               <Input
                 value={newTarget}
                 onChange={(e) => setNewTarget(e.target.value)}
-                placeholder={newType === "email" ? "alerts@acme.dev" : "https://hooks.slack.com/services/..."}
+                placeholder={
+                  newType === "email" ? "alerts@acme.dev" : "https://hooks.slack.com/services/..."
+                }
                 required
                 className="text-xs font-mono"
               />

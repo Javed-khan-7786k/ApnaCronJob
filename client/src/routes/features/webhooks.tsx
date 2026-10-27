@@ -27,7 +27,8 @@ export function WebhooksFeaturePage() {
               Secure Webhook Scheduling
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Deliver custom JSON payloads to any HTTPS target with cryptographic HMAC signatures and replay defense.
+              Deliver custom JSON payloads to any HTTPS target with cryptographic HMAC signatures
+              and replay defense.
             </p>
           </div>
 
@@ -36,7 +37,8 @@ export function WebhooksFeaturePage() {
               <Lock className="h-6 w-6 text-cobalt" />
               <h3 className="font-semibold text-sm text-foreground">HMAC-SHA256 Signatures</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Every dispatched webhook contains an `X-AapnaCronJob-Signature` header calculated using your secret key. Verify authenticity on your receiving backend effortlessly.
+                Every dispatched webhook contains an `X-AapnaCronJob-Signature` header calculated
+                using your secret key. Verify authenticity on your receiving backend effortlessly.
               </p>
             </div>
 
@@ -44,7 +46,8 @@ export function WebhooksFeaturePage() {
               <Terminal className="h-6 w-6 text-purple-500" />
               <h3 className="font-semibold text-sm text-foreground">Dynamic Payload Variables</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Interpolate dynamic execution metadata into request bodies: `{"{{timestamp}}"}`, `{"{{job_id}}"}`, `{"{{attempt}}"}`, and `{"{{scheduled_time}}"}`.
+                Interpolate dynamic execution metadata into request bodies: `{"{{timestamp}}"}`, `
+                {"{{job_id}}"}`, `{"{{attempt}}"}`, and `{"{{scheduled_time}}"}`.
               </p>
             </div>
 
@@ -52,14 +55,18 @@ export function WebhooksFeaturePage() {
               <Shield className="h-6 w-6 text-emerald-500" />
               <h3 className="font-semibold text-sm text-foreground">Replay Attack Prevention</h3>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Timestamp validation within signatures prevents bad actors from intercepting and replaying historical webhook dispatches against your systems.
+                Timestamp validation within signatures prevents bad actors from intercepting and
+                replaying historical webhook dispatches against your systems.
               </p>
             </div>
           </div>
 
           <div className="text-center pt-8">
             <Link to="/app/integrations">
-              <Button size="lg" className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90">
+              <Button
+                size="lg"
+                className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90"
+              >
                 Explore Connected Integrations →
               </Button>
             </Link>

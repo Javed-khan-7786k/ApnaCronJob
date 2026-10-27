@@ -105,15 +105,17 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
   }, [jobs, search, statusFilter, sortField, sortAsc]);
 
   // Actions
-  const handleToggleEnable = (id: string) => {
-    const updated = DataStore.toggleJob(id);
+  const handleToggleEnable = async (id: string) => {
+    const updated = await DataStore.toggleJob(id);
     if (!updated) return;
     setJobs(DataStore.getJobs());
     toast.success(`Job “${updated.name}” ${updated.enabled ? "resumed" : "paused"}`);
   };
 
   const handleRunNow = async (job: Job) => {
-    toast.loading(`Triggering run for “${job.name}” via Backend Engine...`, { id: `run-${job.id}` });
+    toast.loading(`Triggering run for “${job.name}” via Backend Engine...`, {
+      id: `run-${job.id}`,
+    });
     try {
       const exec = await DataStore.runJobNow(job.id);
       setJobs(DataStore.getJobs());
@@ -125,7 +127,9 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
       const duration = Math.floor(Math.random() * 80 + 40);
       DataStore.recordExecution(job.id, "success", duration, 200);
       setJobs(DataStore.getJobs());
-      toast.success(`Dispatched execution for “${job.name}” (200 OK • ${duration}ms).`, { id: `run-${job.id}` });
+      toast.success(`Dispatched execution for “${job.name}” (200 OK • ${duration}ms).`, {
+        id: `run-${job.id}`,
+      });
     }
   };
 
@@ -253,10 +257,7 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
             <tr>
               <th className="py-3 px-3 w-8">
                 <Checkbox
-                  checked={
-                    selectedIds.size === filteredJobs.length &&
-                    filteredJobs.length > 0
-                  }
+                  checked={selectedIds.size === filteredJobs.length && filteredJobs.length > 0}
                   onCheckedChange={toggleSelectAll}
                   aria-label="Select all jobs"
                 />
@@ -321,10 +322,7 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
                   : "100.0";
 
                 return (
-                  <tr
-                    key={job.id}
-                    className="hover:bg-muted/30 transition-colors group"
-                  >
+                  <tr key={job.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="py-3 px-3">
                       <Checkbox
                         checked={selectedIds.has(job.id)}
@@ -335,7 +333,8 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
                     <td className="py-3 px-3">
                       <div className="flex flex-col font-sans">
                         <Link
-                          to={`/app/jobs/${job.id}`}
+                          to="/app/jobs/$jobId"
+                          params={{ jobId: job.id }}
                           className="font-semibold text-foreground hover:text-cobalt hover:underline text-xs"
                         >
                           {job.name}
@@ -351,9 +350,7 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
 
                     <td className="py-3 px-3">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-foreground">
-                          {job.cron}
-                        </span>
+                        <span className="font-semibold text-foreground">{job.cron}</span>
                         <span className="text-[10px] text-muted-foreground font-sans truncate max-w-[150px]">
                           {humanizeCron(job.cron)}
                         </span>
@@ -461,14 +458,12 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
       {/* Mobile Card List View */}
       <div className="md:hidden space-y-3">
         {filteredJobs.map((job) => (
-          <div
-            key={job.id}
-            className="rounded-lg border border-border bg-card p-4 space-y-3"
-          >
+          <div key={job.id} className="rounded-lg border border-border bg-card p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <Link
-                  to={`/app/jobs/${job.id}`}
+                  to="/app/jobs/$jobId"
+                  params={{ jobId: job.id }}
                   className="font-semibold text-sm text-foreground hover:underline"
                 >
                   {job.name}
@@ -487,9 +482,7 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
               </div>
               <div>
                 <span className="text-[10px] uppercase block">Last Run:</span>
-                <span className="text-foreground">
-                  {relativeLabel(job.lastRunMinutesAgo)}
-                </span>
+                <span className="text-foreground">{relativeLabel(job.lastRunMinutesAgo)}</span>
               </div>
             </div>
 
@@ -504,7 +497,7 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
                 Run Now
               </Button>
 
-              <Link to={`/app/jobs/${job.id}`}>
+              <Link to="/app/jobs/$jobId" params={{ jobId: job.id }}>
                 <Button variant="ghost" size="sm" className="h-7 text-xs font-mono">
                   Details →
                 </Button>
@@ -520,7 +513,8 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete scheduled job?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete “{jobToDelete?.name}”? All future scheduled executions, retry rules, and alert hooks for this job will be stopped.
+              Are you sure you want to delete “{jobToDelete?.name}”? All future scheduled
+              executions, retry rules, and alert hooks for this job will be stopped.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

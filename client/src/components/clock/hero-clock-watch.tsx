@@ -41,7 +41,7 @@ export function HeroClockWatch({ className = "" }: { className?: string }) {
     offset,
     abbrev,
   } = useMemo(() => {
-    let targetDate = time;
+    const targetDate = time;
     try {
       // Calculate time in selected timezone
       const formatter = new Intl.DateTimeFormat("en-US", {
@@ -151,9 +151,7 @@ export function HeroClockWatch({ className = "" }: { className?: string }) {
               >
                 <div
                   className={`rounded-full transition-colors ${
-                    tick.isMajor
-                      ? "w-1 h-3.5 bg-foreground"
-                      : "w-0.5 h-1.5 bg-muted-foreground/40"
+                    tick.isMajor ? "w-1 h-3.5 bg-foreground" : "w-0.5 h-1.5 bg-muted-foreground/40"
                   }`}
                 />
               </div>
@@ -198,16 +196,12 @@ export function HeroClockWatch({ className = "" }: { className?: string }) {
               <span className="text-[7px] font-mono uppercase text-muted-foreground tracking-wider">
                 OFFSET
               </span>
-              <span className="text-[9px] font-mono font-bold text-cobalt">
-                {offset}
-              </span>
+              <span className="text-[9px] font-mono font-bold text-cobalt">{offset}</span>
             </div>
 
             {/* Date Window at 4:30 */}
             <div className="absolute bottom-16 sm:bottom-20 flex items-center gap-1.5 px-2.5 py-0.5 rounded border border-border/80 bg-background/80 shadow-xs font-mono text-[10px] sm:text-xs">
-              <span className="font-semibold text-foreground uppercase">
-                {digitalDate}
-              </span>
+              <span className="font-semibold text-foreground uppercase">{digitalDate}</span>
             </div>
 
             {/* Hands Layer */}
@@ -270,12 +264,8 @@ export function HeroClockWatch({ className = "" }: { className?: string }) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="font-bold text-foreground tracking-widest text-sm">
-            {digitalTime}
-          </span>
-          <span className="text-[10px] text-cobalt font-semibold">
-            {abbrev}
-          </span>
+          <span className="font-bold text-foreground tracking-widest text-sm">{digitalTime}</span>
+          <span className="text-[10px] text-cobalt font-semibold">{abbrev}</span>
         </div>
         <span className="text-[10px] font-mono text-muted-foreground/80">
           Continuous 60 FPS Atomic Quartz Movement • Sync Guard Active

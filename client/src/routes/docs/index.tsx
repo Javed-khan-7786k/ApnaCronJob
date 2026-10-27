@@ -24,13 +24,15 @@ export function DocsIndexPage() {
     },
     {
       title: "Cron Syntax & Expressions",
-      description: "Master 5-field cron notation, step values, lists, ranges, and timezone semantics.",
+      description:
+        "Master 5-field cron notation, step values, lists, ranges, and timezone semantics.",
       to: "/docs/cron-expressions",
       icon: Clock,
     },
     {
       title: "REST API Reference",
-      description: "Complete OpenAPI spec for programmatic job creation, execution polling, and audit extraction.",
+      description:
+        "Complete OpenAPI spec for programmatic job creation, execution polling, and audit extraction.",
       to: "/docs/api",
       icon: Code,
     },
@@ -48,7 +50,8 @@ export function DocsIndexPage() {
               AapnaCronJob Documentation
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans leading-relaxed">
-              Everything you need to schedule, monitor, and troubleshoot HTTP triggers, webhooks, and background workflows.
+              Everything you need to schedule, monitor, and troubleshoot HTTP triggers, webhooks,
+              and background workflows.
             </p>
           </div>
 
@@ -64,9 +67,7 @@ export function DocsIndexPage() {
                     <div className="h-10 w-10 rounded-lg border border-border bg-paper-sunken flex items-center justify-center text-cobalt">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h2 className="font-display font-bold text-lg text-foreground">
-                      {s.title}
-                    </h2>
+                    <h2 className="font-display font-bold text-lg text-foreground">{s.title}</h2>
                     <p className="text-xs text-muted-foreground font-sans leading-relaxed">
                       {s.description}
                     </p>
@@ -91,7 +92,8 @@ export function DocsIndexPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs font-sans text-muted-foreground">
               <div className="p-4 rounded-lg border border-border bg-paper-sunken">
                 <span className="font-bold text-foreground block mb-1">Sub-Second Dispatch</span>
-                Dispatches are executed with atomic clock precision across multi-region consensus nodes.
+                Dispatches are executed with atomic clock precision across multi-region consensus
+                nodes.
               </div>
               <div className="p-4 rounded-lg border border-border bg-paper-sunken">
                 <span className="font-bold text-foreground block mb-1">Zero Plaintext Secrets</span>
@@ -99,7 +101,8 @@ export function DocsIndexPage() {
               </div>
               <div className="p-4 rounded-lg border border-border bg-paper-sunken">
                 <span className="font-bold text-foreground block mb-1">Signed Payloads</span>
-                Verify outgoing requests using the SHA-256 HMAC signature passed in `X-AapnaCronJob-Signature`.
+                Verify outgoing requests using the SHA-256 HMAC signature passed in
+                `X-AapnaCronJob-Signature`.
               </div>
             </div>
           </div>

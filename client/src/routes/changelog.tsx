@@ -10,7 +10,8 @@ export const Route = createFileRoute("/changelog")({
   head: () =>
     pageHead({
       title: "Product Changelog — AapnaCronJob",
-      description: "Latest feature releases, performance improvements, and bug fixes in AapnaCronJob.",
+      description:
+        "Latest feature releases, performance improvements, and bug fixes in AapnaCronJob.",
     }),
   component: ChangelogPage,
 });
@@ -28,7 +29,8 @@ export function ChangelogPage() {
               Product Changelog
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Discover the newest capabilities, speed improvements, and reliability updates shipped to AapnaCronJob.
+              Discover the newest capabilities, speed improvements, and reliability updates shipped
+              to AapnaCronJob.
             </p>
           </div>
 
@@ -42,17 +44,15 @@ export function ChangelogPage() {
                   <span className="font-mono text-base font-bold text-foreground">
                     v{entry.version}
                   </span>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {entry.date}
-                  </span>
+                  <span className="text-xs font-mono text-muted-foreground">{entry.date}</span>
                   <Badge
                     variant="outline"
                     className={`font-mono text-[10px] capitalize ${
                       entry.type === "feature"
                         ? "text-cobalt border-cobalt/30"
                         : entry.type === "improvement"
-                        ? "text-emerald-600 border-emerald-500/30"
-                        : "text-amber-600 border-amber-500/30"
+                          ? "text-emerald-600 border-emerald-500/30"
+                          : "text-amber-600 border-amber-500/30"
                     }`}
                   >
                     {entry.type}
@@ -60,9 +60,7 @@ export function ChangelogPage() {
                 </div>
 
                 <div className="rounded-xl border border-border bg-card p-6 space-y-2">
-                  <h2 className="font-display font-bold text-lg text-foreground">
-                    {entry.title}
-                  </h2>
+                  <h2 className="font-display font-bold text-lg text-foreground">{entry.title}</h2>
                   <p className="text-xs text-muted-foreground font-sans leading-relaxed">
                     {entry.body}
                   </p>

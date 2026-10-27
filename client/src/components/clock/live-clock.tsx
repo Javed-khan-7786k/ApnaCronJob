@@ -4,11 +4,7 @@ import { useNow } from "@/hooks/use-now";
 import { useClockPrefs } from "@/hooks/use-clock-prefs";
 import { timezoneAbbrev, utcOffsetLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -150,9 +146,7 @@ export function LiveClock({
         aria-label="Application header clock"
       >
         <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="font-semibold text-foreground tracking-wider">
-          {formattedTime.time}
-        </span>
+        <span className="font-semibold text-foreground tracking-wider">{formattedTime.time}</span>
         <span className="text-[11px] text-muted-foreground/80">{abbr}</span>
         {tzSelector}
       </div>
@@ -173,9 +167,7 @@ export function LiveClock({
   // Card variant for dashboard
   if (variant === "card") {
     return (
-      <div
-        className={`rounded-lg border border-border bg-card p-4 transition-colors ${className}`}
-      >
+      <div className={`rounded-lg border border-border bg-card p-4 transition-colors ${className}`}>
         <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-3">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -202,9 +194,7 @@ export function LiveClock({
           <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
             <span>{formattedTime.date}</span>
             {showUtcReference && activeZone !== "UTC" && (
-              <span className="font-mono text-[11px] opacity-80">
-                UTC: {formattedTime.utcTime}
-              </span>
+              <span className="font-mono text-[11px] opacity-80">UTC: {formattedTime.utcTime}</span>
             )}
           </div>
         </div>
@@ -247,9 +237,7 @@ export function LiveClock({
             <span>{formattedTime.time}</span>
             <span className="text-sm font-medium text-cobalt ml-1">{abbr}</span>
           </div>
-          <p className="mt-1.5 text-xs text-muted-foreground font-sans">
-            {formattedTime.date}
-          </p>
+          <p className="mt-1.5 text-xs text-muted-foreground font-sans">{formattedTime.date}</p>
         </div>
 
         {showUtcReference && (

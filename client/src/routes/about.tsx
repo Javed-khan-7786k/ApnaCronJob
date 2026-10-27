@@ -9,7 +9,8 @@ export const Route = createFileRoute("/about")({
   head: () =>
     pageHead({
       title: "About Us — AapnaCronJob",
-      description: "Our mission to provide developers with reliable, silent-failure-free cron infrastructure.",
+      description:
+        "Our mission to provide developers with reliable, silent-failure-free cron infrastructure.",
     }),
   component: AboutPage,
 });
@@ -27,7 +28,8 @@ export function AboutPage() {
               Built for developers who care about silent failures.
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans leading-relaxed">
-              We started AapnaCronJob after experiencing a 3-day database backup outage caused by an unannounced server restart. Local crontab didn't tell us; customer tickets did.
+              We started AapnaCronJob after experiencing a 3-day database backup outage caused by an
+              unannounced server restart. Local crontab didn't tell us; customer tickets did.
             </p>
           </div>
 
@@ -38,7 +40,9 @@ export function AboutPage() {
                 Obsessed with Sub-Second Time
               </h2>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Time isn't approximate. When you schedule a job for 02:00:00 UTC, it shouldn't execute at 02:00:38. Our distributed runner fleet uses synchronized atomic reference clocks to guarantee punctuality.
+                Time isn't approximate. When you schedule a job for 02:00:00 UTC, it shouldn't
+                execute at 02:00:38. Our distributed runner fleet uses synchronized atomic reference
+                clocks to guarantee punctuality.
               </p>
             </div>
 
@@ -48,17 +52,18 @@ export function AboutPage() {
                 Editorial Design Clarity
               </h2>
               <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                Developer tools shouldn't feel cluttered or noisy. We prioritize clean typography, high information density, and instant comprehension over decorative animations and bloated dashboards.
+                Developer tools shouldn't feel cluttered or noisy. We prioritize clean typography,
+                high information density, and instant comprehension over decorative animations and
+                bloated dashboards.
               </p>
             </div>
           </div>
 
           <div className="rounded-xl border border-border bg-paper-sunken p-8 space-y-4">
-            <h3 className="font-display text-xl font-bold text-foreground">
-              The Engineering Team
-            </h3>
+            <h3 className="font-display text-xl font-bold text-foreground">The Engineering Team</h3>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-              AapnaCronJob is built by a distributed team of systems engineers, distributed database alumni, and frontend designers across San Francisco, London, Berlin, and Bengaluru.
+              AapnaCronJob is built by a distributed team of systems engineers, distributed database
+              alumni, and frontend designers across San Francisco, London, Berlin, and Bengaluru.
             </p>
             <div className="pt-2">
               <Link to="/contact">

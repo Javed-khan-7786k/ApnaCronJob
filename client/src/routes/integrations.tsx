@@ -13,7 +13,8 @@ export const Route = createFileRoute("/integrations")({
   head: () =>
     pageHead({
       title: "Integration Directory — AapnaCronJob",
-      description: "Connect AapnaCronJob to Slack, PagerDuty, Discord, GitHub, and custom webhooks.",
+      description:
+        "Connect AapnaCronJob to Slack, PagerDuty, Discord, GitHub, and custom webhooks.",
     }),
   component: IntegrationsDirectoryPage,
 });
@@ -47,7 +48,8 @@ export function IntegrationsDirectoryPage() {
               Connect AapnaCronJob to your entire workflow.
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Streamline failure alerting, incident escalations, and automated deployment dispatches with native integrations.
+              Streamline failure alerting, incident escalations, and automated deployment dispatches
+              with native integrations.
             </p>
           </div>
 
@@ -100,11 +102,19 @@ export function IntegrationsDirectoryPage() {
                 </div>
 
                 <div className="pt-4 border-t border-border/60 flex items-center justify-between text-xs font-mono">
-                  <span className={item.connected ? "text-emerald-600 font-semibold" : "text-muted-foreground"}>
+                  <span
+                    className={
+                      item.connected ? "text-emerald-600 font-semibold" : "text-muted-foreground"
+                    }
+                  >
                     {item.connected ? "✓ Connected" : "Available"}
                   </span>
                   <Link to="/app/integrations">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs font-mono text-cobalt hover:underline">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs font-mono text-cobalt hover:underline"
+                    >
                       Configure →
                     </Button>
                   </Link>

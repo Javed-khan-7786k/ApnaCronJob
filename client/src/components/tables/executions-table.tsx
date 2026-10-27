@@ -22,11 +22,7 @@ import {
   Layers,
 } from "lucide-react";
 
-export function ExecutionsTable({
-  executions,
-}: {
-  executions: Execution[];
-}) {
+export function ExecutionsTable({ executions }: { executions: Execution[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedExec, setSelectedExec] = useState<Execution | null>(null);
@@ -38,8 +34,7 @@ export function ExecutionsTable({
         e.id.toLowerCase().includes(search.toLowerCase()) ||
         (e.errorDetail && e.errorDetail.toLowerCase().includes(search.toLowerCase()));
 
-      const matchStatus =
-        statusFilter === "all" || e.status === statusFilter;
+      const matchStatus = statusFilter === "all" || e.status === statusFilter;
 
       return matchSearch && matchStatus;
     });
@@ -153,18 +148,12 @@ export function ExecutionsTable({
                     onClick={() => setSelectedExec(item)}
                     className="hover:bg-muted/30 cursor-pointer transition-colors"
                   >
-                    <td className="py-3 px-3 font-semibold text-foreground">
-                      {item.id}
-                    </td>
+                    <td className="py-3 px-3 font-semibold text-foreground">{item.id}</td>
                     <td className="py-3 px-3 font-sans font-medium text-foreground">
                       {item.jobName}
                     </td>
-                    <td className="py-3 px-3">
-                      {renderStatusBadge(item.status, item.httpStatus)}
-                    </td>
-                    <td className="py-3 px-3 text-foreground">
-                      {formatDuration(item.durationMs)}
-                    </td>
+                    <td className="py-3 px-3">{renderStatusBadge(item.status, item.httpStatus)}</td>
+                    <td className="py-3 px-3 text-foreground">{formatDuration(item.durationMs)}</td>
                     <td className="py-3 px-3 text-muted-foreground">
                       {relativeLabel(item.startedMinutesAgo)}
                     </td>
@@ -213,9 +202,7 @@ export function ExecutionsTable({
                   <span className="text-[10px] text-muted-foreground uppercase block">
                     Job Name
                   </span>
-                  <span className="font-semibold text-foreground">
-                    {selectedExec.jobName}
-                  </span>
+                  <span className="font-semibold text-foreground">{selectedExec.jobName}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase block">
@@ -263,11 +250,7 @@ export function ExecutionsTable({
               )}
 
               <div className="pt-2 flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedExec(null)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setSelectedExec(null)}>
                   Close
                 </Button>
               </div>

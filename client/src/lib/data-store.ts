@@ -33,6 +33,7 @@ export interface WorkspaceSettings {
   twoFactor: boolean;
   enforceSso: boolean;
   timezone: string;
+  retentionDays?: number | undefined;
 }
 
 const DEFAULT_SETTINGS: WorkspaceSettings = {
@@ -42,6 +43,7 @@ const DEFAULT_SETTINGS: WorkspaceSettings = {
   twoFactor: true,
   enforceSso: false,
   timezone: "Asia/Kolkata",
+  retentionDays: 30,
 };
 
 function getStorageItem<T>(key: string, defaultValue: T): T {
@@ -68,46 +70,71 @@ export function normalizeBackendJob(doc: any): Job {
   const id = String(doc._id || doc.id);
   const now = Date.now();
   const lastRunAt = doc.lastRunAt || null;
-  const lastRunMinutesAgo = lastRunAt ? Math.max(0, Math.round((now - new Date(lastRunAt).getTime()) / 60000)) : null;
+  const lastRunMinutesAgo = lastRunAt
+    ? Math.max(0, Math.round((now - new Date(lastRunAt).getTime()) / 60000))
+    : null;
 
   return {
     id,
     name: doc.name || "Untitled Job",
     description: doc.description || "",
     url: doc.targetUrl || doc.url || "",
-    method: (String(doc.httpMethod || doc.method || "GET").toUpperCase()) as HttpMethod,
+    method: String(doc.httpMethod || doc.method || "GET").toUpperCase() as HttpMethod,
     cron: doc.cronExpression || doc.customCron || doc.cron || "0 * * * *",
     timezone: doc.timezone || "Asia/Kolkata",
     enabled: doc.enabled !== false,
-    status: (doc.status === "paused" ? "paused" : doc.status === "running" ? "running" : doc.status === "failed" ? "failed" : "active") as JobStatus,
+    status: (doc.status === "paused"
+      ? "paused"
+      : doc.status === "running"
+        ? "running"
+        : doc.status === "failed"
+          ? "failed"
+          : "active") as JobStatus,
     createdAt: doc.createdAt || new Date().toISOString(),
     lastRunAt,
     lastRunMinutesAgo,
-    lastStatus: doc.lastStatus === "success" ? "success" : doc.lastStatus === "failure" || doc.lastStatus === "failed" ? "failed" : null,
+    lastStatus:
+      doc.lastStatus === "success"
+        ? "success"
+        : doc.lastStatus === "failure" || doc.lastStatus === "failed"
+          ? "failed"
+          : null,
     lastDurationMs: doc.lastDurationMs || null,
     lastHttpStatus: doc.lastHttpStatus || null,
     successCount: Number(doc.successCount) || 0,
     failureCount: Number(doc.failureCount) || 0,
-    timeoutSeconds: doc.timeoutMs ? Math.round(doc.timeoutMs / 1000) : (Number(doc.timeoutSeconds) || 30),
+    timeoutSeconds: doc.timeoutMs
+      ? Math.round(doc.timeoutMs / 1000)
+      : Number(doc.timeoutSeconds) || 30,
     maxRetries: doc.retryPolicy?.maxAttempts ?? (Number(doc.maxRetries) || 3),
-    retryBackoff: (doc.retryPolicy?.strategy === "fixed" ? "fixed" : "exponential"),
+    retryBackoff: doc.retryPolicy?.strategy === "fixed" ? "fixed" : "exponential",
     notifyEmail: doc.notifyEmail !== false,
     notifyWebhook: Boolean(doc.notifyWebhook),
     headers: Array.isArray(doc.headersList)
       ? doc.headersList.map((h: any) => ({ key: h.key || "", value: String(h.value ?? "") }))
       : doc.headers && typeof doc.headers === "object"
-      ? Object.entries(doc.headers).map(([key, value]) => ({ key, value: String(value ?? "") }))
-      : [],
-    hasBody: Boolean(doc.hasBody),
+        ? Object.entries(doc.headers).map(([key, value]) => ({ key, value: String(value ?? "") }))
+        : [],
+    hasBody: Boolean(doc.hasBody || doc.body),
+    body:
+      typeof doc.body === "string" ? doc.body : doc.body ? JSON.stringify(doc.body, null, 2) : null,
     authMode: (doc.authMode || "none") as AuthMode,
+    authToken: doc.authToken || undefined,
     tags: Array.isArray(doc.tags) ? doc.tags : [],
   };
 }
 
 export function normalizeBackendExecution(doc: any): Execution {
   const startedAt = doc.startedAt || doc.createdAt;
-  const startedMinutesAgo = startedAt ? Math.max(0, Math.round((Date.now() - new Date(startedAt).getTime()) / 60000)) : 0;
-  const status = doc.status === "completed" || doc.status === "success" ? "success" : doc.status === "retrying" ? "retrying" : "failed";
+  const startedMinutesAgo = startedAt
+    ? Math.max(0, Math.round((Date.now() - new Date(startedAt).getTime()) / 60000))
+    : 0;
+  const status =
+    doc.status === "completed" || doc.status === "success"
+      ? "success"
+      : doc.status === "retrying"
+        ? "retrying"
+        : "failed";
 
   return {
     id: String(doc._id || doc.id),
@@ -118,7 +145,10 @@ export function normalizeBackendExecution(doc: any): Execution {
     durationMs: Number(doc.durationMs) || 120,
     httpStatus: doc.responseStatus ?? doc.httpStatus ?? 200,
     attempt: Number(doc.attempt) || 1,
-    errorDetail: doc.errorDetail || doc.errorMessage || (status === "failed" ? "Execution returned non-2xx status" : null),
+    errorDetail:
+      doc.errorDetail ||
+      doc.errorMessage ||
+      (status === "failed" ? "Execution returned non-2xx status" : null),
   };
 }
 
@@ -162,14 +192,19 @@ export const DataStore = {
       if (keysRes.success && Array.isArray(keysRes.data)) {
         const backendKeys: ApiKey[] = keysRes.data.map((k: any) => {
           const createdAt = k.createdAt || new Date().toISOString();
-          const createdMinutesAgo = Math.max(0, Math.round((Date.now() - new Date(createdAt).getTime()) / 60000));
+          const createdMinutesAgo = Math.max(
+            0,
+            Math.round((Date.now() - new Date(createdAt).getTime()) / 60000),
+          );
           return {
             id: String(k._id || k.id),
             label: k.label || "API Key",
             prefix: k.prefix || "crn_live_****",
             createdAt,
             createdMinutesAgo,
-            lastUsedMinutesAgo: k.lastUsedAt ? Math.max(0, Math.round((Date.now() - new Date(k.lastUsedAt).getTime()) / 60000)) : null,
+            lastUsedMinutesAgo: k.lastUsedAt
+              ? Math.max(0, Math.round((Date.now() - new Date(k.lastUsedAt).getTime()) / 60000))
+              : null,
             scopes: Array.isArray(k.scopes) ? k.scopes : ["jobs:read"],
           };
         });
@@ -195,13 +230,39 @@ export const DataStore = {
       if (auditRes.success && Array.isArray(auditRes.data)) {
         const backendAudit: AuditEntry[] = auditRes.data.map((a: any) => ({
           id: String(a._id || a.id),
-          minutesAgo: Math.max(0, Math.round((Date.now() - new Date(a.createdAt || a.timestamp || Date.now()).getTime()) / 60000)),
+          minutesAgo: Math.max(
+            0,
+            Math.round(
+              (Date.now() - new Date(a.createdAt || a.timestamp || Date.now()).getTime()) / 60000,
+            ),
+          ),
           actor: a.username || a.user?.username || "Admin",
           action: a.action?.toLowerCase()?.replace(/_/g, " ") || "performed operation",
-          target: a.targetId ? String(a.targetId) : (a.details?.name || a.details?.label || "Resource"),
+          target: a.targetId
+            ? String(a.targetId)
+            : a.details?.name || a.details?.label || "Resource",
           kind: "job.updated",
         }));
         setStorageItem(AUDIT_STORAGE_KEY, backendAudit);
+      }
+
+      // 7. Sync Workspace Settings from MongoDB
+      try {
+        const settingsRes = await apiClient.system.getSettings();
+        if (settingsRes.success && settingsRes.data) {
+          const s = settingsRes.data;
+          const current = this.getSettings();
+          const syncedSettings: WorkspaceSettings = {
+            ...current,
+            workspaceName: s.workspaceName || current.workspaceName,
+            supportEmail: s.supportEmail || current.supportEmail,
+            defaultTimeout: s.defaultTimeout || current.defaultTimeout,
+            retentionDays: s.retentionDays || current.retentionDays,
+          };
+          setStorageItem(SETTINGS_STORAGE_KEY, syncedSettings);
+        }
+      } catch {
+        // quiet settings fallback
       }
 
       return true;
@@ -241,10 +302,16 @@ export const DataStore = {
         maxAttempts: job.maxRetries || 3,
         strategy: job.retryBackoff || "exponential",
       },
-      headers: job.headers.reduce((acc, h) => {
-        if (h.key && h.key.trim()) acc[h.key.trim()] = h.value;
-        return acc;
-      }, {} as Record<string, string>),
+      headers: job.headers.reduce(
+        (acc, h) => {
+          if (h.key && h.key.trim()) acc[h.key.trim()] = h.value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      ),
+      body: job.body || null,
+      authMode: job.authMode,
+      authToken: job.authToken,
       tags: job.tags,
     };
 
@@ -365,7 +432,8 @@ export const DataStore = {
       durationMs,
       httpStatus,
       attempt: 1,
-      errorDetail: status === "failed" ? `HTTP ${httpStatus} error returned from ${job?.url}` : null,
+      errorDetail:
+        status === "failed" ? `HTTP ${httpStatus} error returned from ${job?.url}` : null,
     };
 
     const current = this.getExecutions();
@@ -375,7 +443,7 @@ export const DataStore = {
 
   async runJobNow(jobId: string): Promise<Execution> {
     try {
-      const res = await apiClient.jobs.runNow(jobId);
+      const res: any = await apiClient.jobs.runNow(jobId);
       if (res.success && (res.data || res.executionId)) {
         const executionData = res.data || {
           _id: res.executionId,
@@ -489,7 +557,10 @@ export const DataStore = {
     setStorageItem(KEYS_STORAGE_KEY, keys);
   },
 
-  async addApiKey(label: string, scopes: string[] = ["jobs:read", "jobs:write", "runs:dispatch"]): Promise<ApiKey> {
+  async addApiKey(
+    label: string,
+    scopes: string[] = ["jobs:read", "jobs:write", "runs:dispatch"],
+  ): Promise<ApiKey> {
     let newKey: ApiKey = {
       id: `key_${Date.now()}`,
       label: label || "Production Service Key",
@@ -506,7 +577,10 @@ export const DataStore = {
         newKey = {
           id: String(res.data._id || res.data.id),
           label: res.data.label || label,
-          prefix: res.data.prefix || (res.data.secretKey ? res.data.secretKey.substring(0, 13) : "crn_live_****"),
+          prefix:
+            res.data.prefix ||
+            (res.data.secretKey ? res.data.secretKey.substring(0, 13) : "crn_live_****"),
+          secretKey: res.data.secretKey,
           createdAt: res.data.createdAt || new Date().toISOString(),
           createdMinutesAgo: 0,
           lastUsedMinutesAgo: null,
@@ -561,13 +635,18 @@ export const DataStore = {
     setStorageItem(TEAM_STORAGE_KEY, members);
   },
 
-  async inviteMember(name: string, email: string, role: TeamMember["role"] = "Editor"): Promise<TeamMember> {
-    const initials = name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "MB";
+  async inviteMember(
+    name: string,
+    email: string,
+    role: TeamMember["role"] = "Editor",
+  ): Promise<TeamMember> {
+    const initials =
+      name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "MB";
 
     let newMember: TeamMember = {
       id: `tm_${Date.now()}`,
@@ -656,6 +735,14 @@ export const DataStore = {
       target: updated.workspaceName,
       kind: "settings.updated",
     });
+    apiClient.system
+      .updateSettings({
+        workspaceName: updated.workspaceName,
+        supportEmail: updated.supportEmail,
+        defaultTimeout: updated.defaultTimeout,
+        retentionDays: updated.retentionDays ?? 30,
+      })
+      .catch(() => {});
     return updated;
   },
 

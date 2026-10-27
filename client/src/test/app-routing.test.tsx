@@ -65,4 +65,3 @@ describe("Format Utilities", () => {
     expect(relativeLabel(120)).toBe("2 hr ago");
   });
 });
-

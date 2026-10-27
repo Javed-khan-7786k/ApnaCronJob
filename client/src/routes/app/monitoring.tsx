@@ -13,7 +13,8 @@ export const Route = createFileRoute("/app/monitoring")({
   head: () =>
     pageHead({
       title: "Monitoring & Health — AapnaCronJob Console",
-      description: "Live endpoint health metrics, latency breakdown, and availability from backend database.",
+      description:
+        "Live endpoint health metrics, latency breakdown, and availability from backend database.",
     }),
   component: MonitoringOverviewPage,
 });
@@ -58,7 +59,8 @@ export function MonitoringOverviewPage() {
             Monitoring & Endpoint Health
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
-            Real-time latency metrics, TLS certificate inspection, and multi-region runner status from backend database.
+            Real-time latency metrics, TLS certificate inspection, and multi-region runner status
+            from backend database.
           </p>
         </div>
 
@@ -67,14 +69,12 @@ export function MonitoringOverviewPage() {
           <div className="rounded-xl border border-border bg-card p-4 space-y-1">
             <span className="eyebrow text-muted-foreground">Monitored Targets</span>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-bold text-foreground">
-                {jobs.length}
+              <span className="font-mono text-3xl font-bold text-foreground">{jobs.length}</span>
+              <span className="text-[10px] font-mono text-emerald-600">
+                {metrics.healthPercentage}% Healthy
               </span>
-              <span className="text-[10px] font-mono text-emerald-600">{metrics.healthPercentage}% Healthy</span>
             </div>
-            <p className="text-[11px] text-muted-foreground font-sans">
-              Across all regions
-            </p>
+            <p className="text-[11px] text-muted-foreground font-sans">Across all regions</p>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 space-y-1">
@@ -110,9 +110,7 @@ export function MonitoringOverviewPage() {
             <h2 className="font-display font-bold text-base text-foreground">
               Endpoint Status Breakdown
             </h2>
-            <span className="text-xs font-mono text-muted-foreground">
-              Live from MongoDB
-            </span>
+            <span className="text-xs font-mono text-muted-foreground">Live from MongoDB</span>
           </div>
 
           <div className="divide-y divide-border/60 text-xs font-mono">
@@ -122,7 +120,10 @@ export function MonitoringOverviewPage() {
               </div>
             ) : (
               jobs.map((job) => (
-                <div key={job.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div
+                  key={job.id}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground text-sm font-sans">
@@ -139,14 +140,22 @@ export function MonitoringOverviewPage() {
 
                   <div className="flex items-center gap-6">
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase block">Avg Latency</span>
-                      <span className="font-semibold text-foreground">{job.lastDurationMs ? `${job.lastDurationMs}ms` : "—"}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase block">
+                        Avg Latency
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {job.lastDurationMs ? `${job.lastDurationMs}ms` : "—"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase block">HTTP Status</span>
-                      <span className="text-emerald-600 font-semibold">{job.lastHttpStatus ?? 200} OK</span>
+                      <span className="text-[10px] text-muted-foreground uppercase block">
+                        HTTP Status
+                      </span>
+                      <span className="text-emerald-600 font-semibold">
+                        {job.lastHttpStatus ?? 200} OK
+                      </span>
                     </div>
-                    <Link to={`/app/jobs/${job.id}`}>
+                    <Link to="/app/jobs/$jobId" params={{ jobId: job.id }}>
                       <Button variant="ghost" size="sm" className="h-7 text-xs font-mono">
                         Telemetry →
                       </Button>

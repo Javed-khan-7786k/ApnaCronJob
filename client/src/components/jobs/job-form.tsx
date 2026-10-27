@@ -30,11 +30,7 @@ export interface JobFormProps {
   onSave?: (job: Job) => void;
 }
 
-export function JobForm({
-  initialJob,
-  isEditing = false,
-  onSave,
-}: JobFormProps) {
+export function JobForm({ initialJob, isEditing = false, onSave }: JobFormProps) {
   const navigate = useNavigate();
 
   const [name, setName] = useState(initialJob?.name || "");
@@ -50,11 +46,13 @@ export function JobForm({
     initialJob?.retryBackoff || "exponential",
   );
   const [authMode, setAuthMode] = useState<AuthMode>(initialJob?.authMode || "bearer");
-  const [authToken, setAuthToken] = useState("••••••••••••••••");
+  const [authToken, setAuthToken] = useState(initialJob?.authToken || "");
   const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>(
     initialJob?.headers || [{ key: "Content-Type", value: "application/json" }],
   );
-  const [body, setBody] = useState('{\n  "action": "trigger_sync",\n  "batch_size": 500\n}');
+  const [body, setBody] = useState(
+    initialJob?.body || '{\n  "action": "trigger_sync",\n  "batch_size": 500\n}',
+  );
   const [notifyEmail, setNotifyEmail] = useState(initialJob?.notifyEmail ?? true);
   const [notifyWebhook, setNotifyWebhook] = useState(initialJob?.notifyWebhook ?? false);
 
@@ -74,17 +72,26 @@ export function JobForm({
     setHeaders(next);
   };
 
-  const handleTestRequest = () => {
+  const handleTestRequest = async () => {
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       toast.error("Please enter a valid HTTP/HTTPS URL");
       return;
     }
     setTesting(true);
-    setTimeout(() => {
+    const start = performance.now();
+    try {
+      new URL(url);
+      await fetch(url, {
+        method: "HEAD",
+        mode: "no-cors",
+      }).catch(() => null);
+      const latency = Math.round(performance.now() - start);
+      toast.success(`Endpoint test: ${method} ${url} responded (${latency}ms)`);
+    } catch (err: any) {
+      toast.error(`Endpoint probe notice: ${err.message || "Failed to reach host"}`);
+    } finally {
       setTesting(false);
-      const latency = Math.floor(Math.random() * 60 + 35);
-      toast.success(`Production Endpoint Test: ${method} ${url} responded 200 OK (${latency}ms)`);
-    }, 600);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,7 +130,12 @@ export function JobForm({
       notifyWebhook,
       headers,
       hasBody: method !== "GET" && method !== "HEAD",
+      body: method !== "GET" && method !== "HEAD" ? body : null,
       authMode,
+      authToken:
+        authToken && authToken !== "••••••••••••••••"
+          ? authToken
+          : initialJob?.authToken || undefined,
       tags: initialJob?.tags || ["custom"],
     };
 
@@ -143,9 +155,7 @@ export function JobForm({
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div className="border-b border-border/80 pb-3">
           <span className="eyebrow">Step 1</span>
-          <h2 className="font-display text-lg font-bold text-foreground">
-            Job Identity & Target
-          </h2>
+          <h2 className="font-display text-lg font-bold text-foreground">Job Identity & Target</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -432,10 +442,7 @@ export function JobForm({
                 Alert on-call engineers when retry budget is exhausted
               </span>
             </div>
-            <Switch
-              checked={notifyEmail}
-              onCheckedChange={setNotifyEmail}
-            />
+            <Switch checked={notifyEmail} onCheckedChange={setNotifyEmail} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -447,10 +454,7 @@ export function JobForm({
                 Push failure payload to configured workspace notification channels
               </span>
             </div>
-            <Switch
-              checked={notifyWebhook}
-              onCheckedChange={setNotifyWebhook}
-            />
+            <Switch checked={notifyWebhook} onCheckedChange={setNotifyWebhook} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -462,10 +466,7 @@ export function JobForm({
                 When enabled, the schedule begins ticking right after creation
               </span>
             </div>
-            <Switch
-              checked={enabled}
-              onCheckedChange={setEnabled}
-            />
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
           </div>
         </div>
       </div>

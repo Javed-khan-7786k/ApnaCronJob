@@ -15,7 +15,8 @@ export const Route = createFileRoute("/login")({
   head: () =>
     pageHead({
       title: "Sign In — AapnaCronJob",
-      description: "Sign in with Google, GitHub, or email credentials to access your AapnaCronJob scheduling console.",
+      description:
+        "Sign in with Google, GitHub, or email credentials to access your AapnaCronJob scheduling console.",
     }),
   component: LoginPage,
 });
@@ -188,7 +189,8 @@ export function LoginPage() {
             <div className="rounded-lg border border-border bg-paper-sunken/60 p-3 text-[11px] font-mono text-muted-foreground flex items-start gap-2">
               <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
               <span>
-                <strong className="text-foreground">Database Verified:</strong> Endpoints are secured via JWT bearer tokens and TLS 1.3 encrypted mesh.
+                <strong className="text-foreground">Database Verified:</strong> Endpoints are
+                secured via JWT bearer tokens and TLS 1.3 encrypted mesh.
               </span>
             </div>
           </div>

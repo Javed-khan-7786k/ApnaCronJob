@@ -11,7 +11,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Server, RefreshCw, CheckCircle2, AlertTriangle, Database, Activity, Wifi } from "lucide-react";
+import {
+  Server,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+  Database,
+  Activity,
+  Wifi,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export function BackendStatusPill() {
@@ -42,9 +50,13 @@ export function BackendStatusPill() {
     try {
       const ok = await DataStore.syncWithBackend();
       if (ok) {
-        toast.success("Successfully synced all jobs, logs, and channels from backend!", { id: "sync-backend" });
+        toast.success("Successfully synced all jobs, logs, and channels from backend!", {
+          id: "sync-backend",
+        });
       } else {
-        toast.error("Could not reach backend at port 5000. Operating in offline cache mode.", { id: "sync-backend" });
+        toast.error("Could not reach backend at port 5000. Operating in offline cache mode.", {
+          id: "sync-backend",
+        });
       }
     } catch (err: any) {
       toast.error(`Sync error: ${err.message}`, { id: "sync-backend" });
@@ -102,8 +114,14 @@ export function BackendStatusPill() {
           )}
 
           <span className="text-muted-foreground hidden sm:inline">Backend:</span>
-          <span className={health.ok ? "text-emerald-500 font-semibold" : "text-rose-500 font-semibold"}>
-            {health.status === "checking" ? "Probing..." : health.ok ? `${health.latencyMs}ms` : "Offline"}
+          <span
+            className={health.ok ? "text-emerald-500 font-semibold" : "text-rose-500 font-semibold"}
+          >
+            {health.status === "checking"
+              ? "Probing..."
+              : health.ok
+                ? `${health.latencyMs}ms`
+                : "Offline"}
           </span>
         </button>
       </DialogTrigger>
@@ -115,7 +133,9 @@ export function BackendStatusPill() {
               <Server className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold font-display">Backend Connection</DialogTitle>
+              <DialogTitle className="text-base font-bold font-display">
+                Backend Connection
+              </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
                 Express REST API & MongoDB Cluster Integration
               </DialogDescription>
@@ -125,7 +145,9 @@ export function BackendStatusPill() {
 
         <div className="space-y-4 pt-2">
           {/* Connection Overview Card */}
-          <div className={`p-4 rounded-lg border ${health.ok ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"}`}>
+          <div
+            className={`p-4 rounded-lg border ${health.ok ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"}`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {health.ok ? (
@@ -135,10 +157,14 @@ export function BackendStatusPill() {
                 )}
                 <div>
                   <h4 className="text-xs font-bold text-foreground">
-                    {health.ok ? "Backend Connected & Operational" : "Backend Server Not Responding"}
+                    {health.ok
+                      ? "Backend Connected & Operational"
+                      : "Backend Server Not Responding"}
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
-                    {health.ok ? "Sub-second scheduler engine listening at port 5000" : (health.error || "Connection refused")}
+                    {health.ok
+                      ? "Sub-second scheduler engine listening at port 5000"
+                      : health.error || "Connection refused"}
                   </p>
                 </div>
               </div>
@@ -171,7 +197,9 @@ export function BackendStatusPill() {
                 <Server className="h-3.5 w-3.5 text-amber-500" />
                 Service Name
               </span>
-              <span className="font-semibold text-foreground">{health.service || "aapna-cron-job"}</span>
+              <span className="font-semibold text-foreground">
+                {health.service || "aapna-cron-job"}
+              </span>
             </div>
 
             <div className="flex items-center justify-between border-t border-border/60 pt-2">
@@ -184,7 +212,9 @@ export function BackendStatusPill() {
 
             <div className="flex items-center justify-between border-t border-border/60 pt-2">
               <span className="text-muted-foreground">Server Uptime</span>
-              <span className="font-semibold text-muted-foreground">{formatUptime(health.uptime)}</span>
+              <span className="font-semibold text-muted-foreground">
+                {formatUptime(health.uptime)}
+              </span>
             </div>
           </div>
 

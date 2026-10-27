@@ -46,7 +46,8 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="text-xs font-sans leading-relaxed text-muted-foreground">
-              Production-grade distributed cron scheduler and HTTP endpoint monitor. Sub-second dispatch, multi-region failover, and zero silent failures.
+              Production-grade distributed cron scheduler and HTTP endpoint monitor. Sub-second
+              dispatch, multi-region failover, and zero silent failures.
             </p>
 
             <div className="pt-2 text-[11px] font-mono text-muted-foreground">
@@ -67,12 +68,18 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/features/cron-scheduler" className="hover:text-foreground transition-colors">
+                <Link
+                  to="/features/cron-scheduler"
+                  className="hover:text-foreground transition-colors"
+                >
                   Cron Scheduler
                 </Link>
               </li>
               <li>
-                <Link to="/features/http-monitoring" className="hover:text-foreground transition-colors">
+                <Link
+                  to="/features/http-monitoring"
+                  className="hover:text-foreground transition-colors"
+                >
                   HTTP Health Checks
                 </Link>
               </li>
@@ -82,7 +89,10 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/features/notifications" className="hover:text-foreground transition-colors">
+                <Link
+                  to="/features/notifications"
+                  className="hover:text-foreground transition-colors"
+                >
                   Multi-channel Alerts
                 </Link>
               </li>
@@ -121,7 +131,10 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/docs/cron-expressions" className="hover:text-foreground transition-colors">
+                <Link
+                  to="/docs/cron-expressions"
+                  className="hover:text-foreground transition-colors"
+                >
                   Cron Syntax Reference
                 </Link>
               </li>

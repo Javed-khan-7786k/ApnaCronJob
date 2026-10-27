@@ -69,7 +69,11 @@ export function DashboardPage() {
               Workspace Overview
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
-              Production telemetry for <span className="font-mono text-foreground font-semibold">{settings.workspaceName}</span> across multi-region runners.
+              Production telemetry for{" "}
+              <span className="font-mono text-foreground font-semibold">
+                {settings.workspaceName}
+              </span>{" "}
+              across multi-region runners.
             </p>
           </div>
 
@@ -81,7 +85,10 @@ export function DashboardPage() {
               </Button>
             </Link>
             <Link to="/app/jobs/new">
-              <Button size="sm" className="bg-foreground text-background font-mono text-xs hover:bg-foreground/90">
+              <Button
+                size="sm"
+                className="bg-foreground text-background font-mono text-xs hover:bg-foreground/90"
+              >
                 <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
                 New Scheduled Job
               </Button>
@@ -94,9 +101,7 @@ export function DashboardPage() {
           <div className="rounded-xl border border-border bg-card p-4 space-y-1">
             <span className="eyebrow text-muted-foreground">Active Schedules</span>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-bold text-foreground">
-                {activeJobs}
-              </span>
+              <span className="font-mono text-3xl font-bold text-foreground">{activeJobs}</span>
               <span className="text-[10px] font-mono text-muted-foreground">
                 / {totalJobs} configured
               </span>
@@ -109,28 +114,20 @@ export function DashboardPage() {
           <div className="rounded-xl border border-border bg-card p-4 space-y-1">
             <span className="eyebrow text-muted-foreground">Successful Executions</span>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-bold text-emerald-600">
-                {recentSuccess}
-              </span>
+              <span className="font-mono text-3xl font-bold text-emerald-600">{recentSuccess}</span>
               <span className="text-[10px] font-mono text-emerald-600 flex items-center gap-0.5">
                 <TrendingUp className="h-3 w-3" />
                 99.98%
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground font-sans">
-              Recorded in audit stream
-            </p>
+            <p className="text-[11px] text-muted-foreground font-sans">Recorded in audit stream</p>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 space-y-1">
             <span className="eyebrow text-muted-foreground">Failed Dispatches</span>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-bold text-foreground">
-                {recentFailures}
-              </span>
-              <span className="text-[10px] font-mono text-muted-foreground">
-                Auto-retried
-              </span>
+              <span className="font-mono text-3xl font-bold text-foreground">{recentFailures}</span>
+              <span className="text-[10px] font-mono text-muted-foreground">Auto-retried</span>
             </div>
             <p className="text-[11px] text-muted-foreground font-sans">
               Exponential backoff handled
@@ -140,16 +137,10 @@ export function DashboardPage() {
           <div className="rounded-xl border border-border bg-card p-4 space-y-1">
             <span className="eyebrow text-muted-foreground">Clock Drift Guarantee</span>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-bold text-cobalt">
-                &lt; 50ms
-              </span>
-              <span className="text-[10px] font-mono text-cobalt">
-                Sub-second
-              </span>
+              <span className="font-mono text-3xl font-bold text-cobalt">&lt; 50ms</span>
+              <span className="text-[10px] font-mono text-cobalt">Sub-second</span>
             </div>
-            <p className="text-[11px] text-muted-foreground font-sans">
-              Global consensus verified
-            </p>
+            <p className="text-[11px] text-muted-foreground font-sans">Global consensus verified</p>
           </div>
         </div>
 
@@ -199,7 +190,8 @@ export function DashboardPage() {
                         <span className="h-2 w-2 rounded-full bg-cobalt shrink-0" />
                         <div className="truncate">
                           <Link
-                            to={`/app/jobs/${job.id}`}
+                            to="/app/jobs/$jobId"
+                            params={{ jobId: job.id }}
                             className="font-semibold text-foreground hover:underline"
                           >
                             {job.name}
@@ -215,7 +207,9 @@ export function DashboardPage() {
                           {humanizeCron(job.cron)}
                         </span>
                         <span className="text-[10px] text-muted-foreground font-sans">
-                          {diffMs > 0 ? shortFutureLabel(Math.round(diffMs / 60000)) : "Pending trigger"}
+                          {diffMs > 0
+                            ? shortFutureLabel(Math.round(diffMs / 60000))
+                            : "Pending trigger"}
                         </span>
                       </div>
                     </div>
@@ -257,7 +251,10 @@ export function DashboardPage() {
               <tbody className="divide-y divide-border/60">
                 {executions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-xs font-mono text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="p-8 text-center text-xs font-mono text-muted-foreground"
+                    >
                       No executions recorded in database yet. Trigger a job to start streaming logs.
                     </td>
                   </tr>
@@ -270,7 +267,9 @@ export function DashboardPage() {
                         <JobStatusBadge status={item.status} />
                       </td>
                       <td className="p-3 text-foreground">{formatDuration(item.durationMs)}</td>
-                      <td className="p-3 text-muted-foreground">{relativeLabel(item.startedMinutesAgo)}</td>
+                      <td className="p-3 text-muted-foreground">
+                        {relativeLabel(item.startedMinutesAgo)}
+                      </td>
                       <td className="p-3 text-right">
                         <Link to="/app/history">
                           <Button variant="ghost" size="sm" className="h-6 text-[11px] font-mono">
@@ -292,21 +291,25 @@ export function DashboardPage() {
           <div className="rounded-xl border border-border bg-card p-5 space-y-3">
             <div className="flex items-center justify-between border-b border-border/60 pb-2">
               <span className="eyebrow">Recent Audit Log</span>
-              <Link to="/app/audit-logs" className="text-[11px] font-mono text-cobalt hover:underline">
+              <Link
+                to="/app/audit-logs"
+                className="text-[11px] font-mono text-cobalt hover:underline"
+              >
                 View all logs →
               </Link>
             </div>
             <div className="space-y-2 text-xs font-mono">
               {audit.slice(0, 4).map((a) => (
-                <div key={a.id} className="flex items-center justify-between text-muted-foreground py-1">
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between text-muted-foreground py-1"
+                >
                   <div>
                     <span className="font-semibold text-foreground">{a.actor}</span>{" "}
                     <span>{a.action}</span>{" "}
                     <span className="text-foreground font-mono">“{a.target}”</span>
                   </div>
-                  <span className="text-[10px] shrink-0 ml-2">
-                    {relativeLabel(a.minutesAgo)}
-                  </span>
+                  <span className="text-[10px] shrink-0 ml-2">{relativeLabel(a.minutesAgo)}</span>
                 </div>
               ))}
             </div>
@@ -322,7 +325,10 @@ export function DashboardPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               {services.slice(0, 4).map((svc) => (
-                <div key={svc.id} className="p-2.5 rounded-lg border border-border/60 bg-paper-sunken/40">
+                <div
+                  key={svc.id}
+                  className="p-2.5 rounded-lg border border-border/60 bg-paper-sunken/40"
+                >
                   <div className="flex items-center justify-between text-xs font-mono font-medium">
                     <span className="truncate">{svc.name}</span>
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />

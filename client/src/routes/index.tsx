@@ -122,7 +122,6 @@ print(f"Scheduled: {job.id}")`,
 }`,
   };
 
-
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-cobalt selection:text-white">
       {/* 1 & 2. Announcement bar & Premium Navbar */}
@@ -142,22 +141,33 @@ print(f"Scheduled: {job.id}")`,
               <div className="lg:col-span-7 space-y-6">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-mono text-xs text-muted-foreground shadow-xs">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="font-semibold text-foreground">AapnaCronJob Precision Engine</span>
+                  <span className="font-semibold text-foreground">
+                    AapnaCronJob Precision Engine
+                  </span>
                   <span className="opacity-60">•</span>
                   <span>Sub-second accuracy</span>
                 </div>
 
                 <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-[1.05]">
-                  Cron jobs you can <span className="underline decoration-cobalt decoration-4 underline-offset-4">trust</span> with your revenue.
+                  Cron jobs you can{" "}
+                  <span className="underline decoration-cobalt decoration-4 underline-offset-4">
+                    trust
+                  </span>{" "}
+                  with your revenue.
                 </h1>
 
                 <p className="font-sans text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-                  Trigger webhooks and HTTP endpoints with guaranteed sub-second delivery, automatic exponential retries, and instant alerts across Slack, Discord, and PagerDuty. Never suffer silent cron failure again.
+                  Trigger webhooks and HTTP endpoints with guaranteed sub-second delivery, automatic
+                  exponential retries, and instant alerts across Slack, Discord, and PagerDuty.
+                  Never suffer silent cron failure again.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 pt-2">
                   <Link to="/app">
-                    <Button size="lg" className="bg-foreground text-background font-mono text-sm font-semibold hover:bg-foreground/90 h-12 px-6">
+                    <Button
+                      size="lg"
+                      className="bg-foreground text-background font-mono text-sm font-semibold hover:bg-foreground/90 h-12 px-6"
+                    >
                       Launch Console
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -195,7 +205,6 @@ print(f"Scheduled: {job.id}")`,
           </div>
         </section>
 
-
         {/* 4. LIVE CRON SCHEDULER PREVIEW (Interactive) */}
         <section className="border-b border-border py-16 bg-paper-sunken/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -206,12 +215,17 @@ print(f"Scheduled: {job.id}")`,
                   Try the scheduler expression engine
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-1">
-                  Change the expression below to test real-time parsing, plain-English translation, and calculated next run times.
+                  Change the expression below to test real-time parsing, plain-English translation,
+                  and calculated next run times.
                 </p>
               </div>
 
               <Link to="/docs/cron-expressions">
-                <Button variant="ghost" size="sm" className="font-mono text-xs text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-mono text-xs text-muted-foreground hover:text-foreground"
+                >
                   View Cron Syntax Cheatsheet →
                 </Button>
               </Link>
@@ -255,15 +269,15 @@ print(f"Scheduled: {job.id}")`,
                     <div className="rounded-xl border border-border bg-card p-4 transition-all hover:border-foreground/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm text-foreground">
-                            {job.name}
-                          </span>
+                          <span className="font-semibold text-sm text-foreground">{job.name}</span>
                           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground uppercase">
                             {job.method}
                           </span>
                         </div>
                         <div className="mt-1 flex items-center gap-3 text-xs font-mono text-muted-foreground">
-                          <span>{job.cron} ({humanizeCron(job.cron)})</span>
+                          <span>
+                            {job.cron} ({humanizeCron(job.cron)})
+                          </span>
                           <span>•</span>
                           <span className="truncate max-w-[200px]">{job.url}</span>
                         </div>
@@ -278,7 +292,7 @@ print(f"Scheduled: {job.id}")`,
                             {shortFutureLabel(diffMs)}
                           </span>
                         </div>
-                        <Link to={`/app/jobs/${job.id}`}>
+                        <Link to="/app/jobs/$jobId" params={{ jobId: job.id }}>
                           <Button variant="outline" size="sm" className="h-7 text-xs font-mono">
                             View
                           </Button>
@@ -301,7 +315,8 @@ print(f"Scheduled: {job.id}")`,
                 Linux crontab was designed in 1987. Your modern stack deserves better.
               </h2>
               <p className="mt-3 text-sm sm:text-base text-muted-foreground font-sans">
-                Traditional crontabs fail silently on server restarts, OOM crashes, or network timeouts, leaving database backups unmade and payment rolls stuck.
+                Traditional crontabs fail silently on server restarts, OOM crashes, or network
+                timeouts, leaving database backups unmade and payment rolls stuck.
               </p>
             </div>
 
@@ -317,19 +332,31 @@ print(f"Scheduled: {job.id}")`,
                 <ul className="space-y-3 text-xs font-sans text-muted-foreground leading-relaxed">
                   <li className="flex items-start gap-2">
                     <span className="text-danger font-bold">✕</span>
-                    <span><strong>Silent Failure:</strong> A crashed cron job outputs nothing to Slack or email. You only find out when a customer files a ticket.</span>
+                    <span>
+                      <strong>Silent Failure:</strong> A crashed cron job outputs nothing to Slack
+                      or email. You only find out when a customer files a ticket.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-danger font-bold">✕</span>
-                    <span><strong>No Retry Engine:</strong> If an API endpoint drops for 5 seconds during maintenance, the run is lost until next scheduled cycle.</span>
+                    <span>
+                      <strong>No Retry Engine:</strong> If an API endpoint drops for 5 seconds
+                      during maintenance, the run is lost until next scheduled cycle.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-danger font-bold">✕</span>
-                    <span><strong>Server Bound:</strong> Server reboot or auto-scaling kill eliminates the process mid-execution with zero telemetry.</span>
+                    <span>
+                      <strong>Server Bound:</strong> Server reboot or auto-scaling kill eliminates
+                      the process mid-execution with zero telemetry.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-danger font-bold">✕</span>
-                    <span><strong>No Audit Trail:</strong> Good luck determining who modified `crontab -e` at 2 AM or what parameters were changed.</span>
+                    <span>
+                      <strong>No Audit Trail:</strong> Good luck determining who modified `crontab
+                      -e` at 2 AM or what parameters were changed.
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -345,19 +372,31 @@ print(f"Scheduled: {job.id}")`,
                 <ul className="space-y-3 text-xs font-sans text-muted-foreground leading-relaxed">
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span><strong>Sub-Second Global Dispatch:</strong> Multi-region runner cluster executes HTTP dispatches with millisecond accuracy.</span>
+                    <span>
+                      <strong>Sub-Second Global Dispatch:</strong> Multi-region runner cluster
+                      executes HTTP dispatches with millisecond accuracy.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span><strong>Exponential Backoff Retries:</strong> Automatic 3-stage retry budget saves runs from transient network glitches.</span>
+                    <span>
+                      <strong>Exponential Backoff Retries:</strong> Automatic 3-stage retry budget
+                      saves runs from transient network glitches.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span><strong>Instant Multi-Channel Alerts:</strong> Real-time webhook notifications to Slack, PagerDuty, Discord, and email.</span>
+                    <span>
+                      <strong>Instant Multi-Channel Alerts:</strong> Real-time webhook notifications
+                      to Slack, PagerDuty, Discord, and email.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span><strong>Full Audit & Logs:</strong> Every execution code, duration, response body snippet, and configuration edit is tracked.</span>
+                    <span>
+                      <strong>Full Audit & Logs:</strong> Every execution code, duration, response
+                      body snippet, and configuration edit is tracked.
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -387,7 +426,9 @@ print(f"Scheduled: {job.id}")`,
                     Multi-region consensus dispatching
                   </h3>
                   <p className="mt-2 text-sm text-muted-foreground font-sans leading-relaxed">
-                    Jobs are registered across globally synchronized Raft consensus nodes. If an entire cloud region experiences an outage, alternate runner nodes in Frankfurt, Singapore, or Oregon execute your dispatch with zero double-triggers.
+                    Jobs are registered across globally synchronized Raft consensus nodes. If an
+                    entire cloud region experiences an outage, alternate runner nodes in Frankfurt,
+                    Singapore, or Oregon execute your dispatch with zero double-triggers.
                   </p>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground border-t border-border/60 pt-4">
@@ -410,10 +451,14 @@ print(f"Scheduled: {job.id}")`,
                     Exponential Backoff
                   </h3>
                   <p className="mt-2 text-sm text-muted-foreground font-sans leading-relaxed">
-                    Custom retry intervals with jitter prevent thundering herds on recovery. Configurable per-job thresholds.
+                    Custom retry intervals with jitter prevent thundering herds on recovery.
+                    Configurable per-job thresholds.
                   </p>
                 </div>
-                <Link to="/features/retries" className="text-xs font-mono text-cobalt hover:underline">
+                <Link
+                  to="/features/retries"
+                  className="text-xs font-mono text-cobalt hover:underline"
+                >
                   Learn about backoff models →
                 </Link>
               </div>
@@ -429,10 +474,14 @@ print(f"Scheduled: {job.id}")`,
                     Incident Alerts
                   </h3>
                   <p className="mt-2 text-sm text-muted-foreground font-sans leading-relaxed">
-                    Route warnings to Slack and critical failures directly to PagerDuty or Opsgenie with full stack traces.
+                    Route warnings to Slack and critical failures directly to PagerDuty or Opsgenie
+                    with full stack traces.
                   </p>
                 </div>
-                <Link to="/features/notifications" className="text-xs font-mono text-cobalt hover:underline">
+                <Link
+                  to="/features/notifications"
+                  className="text-xs font-mono text-cobalt hover:underline"
+                >
                   Configure notification rules →
                 </Link>
               </div>
@@ -448,7 +497,9 @@ print(f"Scheduled: {job.id}")`,
                     Encrypted headers & payload signing
                   </h3>
                   <p className="mt-2 text-sm text-muted-foreground font-sans leading-relaxed">
-                    All Bearer tokens and custom Authorization headers are encrypted using envelope AES-256-GCM encryption. Outgoing requests include an optional HMAC-SHA256 signature header so your webhook endpoints can verify authenticity.
+                    All Bearer tokens and custom Authorization headers are encrypted using envelope
+                    AES-256-GCM encryption. Outgoing requests include an optional HMAC-SHA256
+                    signature header so your webhook endpoints can verify authenticity.
                   </p>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground border-t border-border/60 pt-4">
@@ -473,20 +524,28 @@ print(f"Scheduled: {job.id}")`,
                   Build complex cron schedules without memorizing syntax
                 </h2>
                 <p className="mt-3 text-sm text-muted-foreground font-sans leading-relaxed">
-                  Whether you need every 15 minutes on weekdays, top of the hour during business hours, or monthly billing rolls, our visual builder and human-readable translator eliminate scheduling bugs.
+                  Whether you need every 15 minutes on weekdays, top of the hour during business
+                  hours, or monthly billing rolls, our visual builder and human-readable translator
+                  eliminate scheduling bugs.
                 </p>
 
                 <div className="mt-6 space-y-3 font-mono text-xs">
                   <div className="p-3 rounded-lg border border-border bg-card flex items-center justify-between">
-                    <span><code>*/15 9-17 * * 1-5</code></span>
+                    <span>
+                      <code>*/15 9-17 * * 1-5</code>
+                    </span>
                     <span className="text-muted-foreground">Every 15 min, 9am-5pm Mon-Fri</span>
                   </div>
                   <div className="p-3 rounded-lg border border-border bg-card flex items-center justify-between">
-                    <span><code>0 0 1,15 * *</code></span>
+                    <span>
+                      <code>0 0 1,15 * *</code>
+                    </span>
                     <span className="text-muted-foreground">1st and 15th of month at midnight</span>
                   </div>
                   <div className="p-3 rounded-lg border border-border bg-card flex items-center justify-between">
-                    <span><code>30 8 * * 1</code></span>
+                    <span>
+                      <code>30 8 * * 1</code>
+                    </span>
                     <span className="text-muted-foreground">Every Monday at 08:30</span>
                   </div>
                 </div>
@@ -521,7 +580,8 @@ print(f"Scheduled: {job.id}")`,
                 Never miss an outage or drop a retry
               </h2>
               <p className="mt-2 text-sm text-muted-foreground font-sans">
-                Real-world webhooks fail. Networks blip. Deployments restart pods. We bridge the gap with smart retry strategies.
+                Real-world webhooks fail. Networks blip. Deployments restart pods. We bridge the gap
+                with smart retry strategies.
               </p>
             </div>
 
@@ -530,15 +590,19 @@ print(f"Scheduled: {job.id}")`,
                 <span className="font-mono text-xs text-cobalt font-bold block mb-1">STEP 1</span>
                 <h3 className="font-semibold text-base text-foreground">Primary Dispatch</h3>
                 <p className="mt-2 text-xs text-muted-foreground font-sans leading-relaxed">
-                  Scheduled runner sends HTTP request to your destination with custom timeout (up to 15 min).
+                  Scheduled runner sends HTTP request to your destination with custom timeout (up to
+                  15 min).
                 </p>
               </div>
 
               <div className="rounded-xl border border-border bg-card p-6">
-                <span className="font-mono text-xs text-amber-500 font-bold block mb-1">STEP 2</span>
+                <span className="font-mono text-xs text-amber-500 font-bold block mb-1">
+                  STEP 2
+                </span>
                 <h3 className="font-semibold text-base text-foreground">Exponential Backoff</h3>
                 <p className="mt-2 text-xs text-muted-foreground font-sans leading-relaxed">
-                  On HTTP 5xx or network timeout, runner automatically retries at 30s, 60s, 120s with jitter.
+                  On HTTP 5xx or network timeout, runner automatically retries at 30s, 60s, 120s
+                  with jitter.
                 </p>
               </div>
 
@@ -546,7 +610,8 @@ print(f"Scheduled: {job.id}")`,
                 <span className="font-mono text-xs text-rose-500 font-bold block mb-1">STEP 3</span>
                 <h3 className="font-semibold text-base text-foreground">Escalation Alert</h3>
                 <p className="mt-2 text-xs text-muted-foreground font-sans leading-relaxed">
-                  If all retries are exhausted, incident payload is instantly dispatched to your Slack & PagerDuty channels.
+                  If all retries are exhausted, incident payload is instantly dispatched to your
+                  Slack & PagerDuty channels.
                 </p>
               </div>
             </div>
@@ -563,7 +628,8 @@ print(f"Scheduled: {job.id}")`,
                   Sub-millisecond execution logs
                 </h2>
                 <p className="text-sm text-muted-foreground font-sans mt-1">
-                  Inspect every status code, latency metric, and error trace with zero retention lock-in.
+                  Inspect every status code, latency metric, and error trace with zero retention
+                  lock-in.
                 </p>
               </div>
               <Link to="/app/history">
@@ -575,7 +641,9 @@ print(f"Scheduled: {job.id}")`,
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="p-3 bg-paper-sunken border-b border-border flex items-center justify-between text-xs font-mono">
-                <span className="text-muted-foreground">Recent Executions Sample (Real-time Stream)</span>
+                <span className="text-muted-foreground">
+                  Recent Executions Sample (Real-time Stream)
+                </span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   Live Listener Active
@@ -586,7 +654,9 @@ print(f"Scheduled: {job.id}")`,
                   <div className="flex items-center gap-3">
                     <span className="text-emerald-600 font-semibold">200 OK</span>
                     <span className="font-semibold text-foreground">Nightly database backup</span>
-                    <span className="text-muted-foreground">https://api.acme.dev/internal/backup/run</span>
+                    <span className="text-muted-foreground">
+                      https://api.acme.dev/internal/backup/run
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-muted-foreground">
                     <span>41.2s</span>
@@ -598,7 +668,9 @@ print(f"Scheduled: {job.id}")`,
                   <div className="flex items-center gap-3">
                     <span className="text-emerald-600 font-semibold">200 OK</span>
                     <span className="font-semibold text-foreground">SSL certificate sweep</span>
-                    <span className="text-muted-foreground">https://api.acme.dev/monitoring/tls/sweep</span>
+                    <span className="text-muted-foreground">
+                      https://api.acme.dev/monitoring/tls/sweep
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-muted-foreground">
                     <span>8.4s</span>
@@ -632,16 +704,22 @@ print(f"Scheduled: {job.id}")`,
                   Custom HTTP methods, headers, and payloads
                 </h2>
                 <p className="text-sm text-muted-foreground font-sans leading-relaxed">
-                  Trigger anything that speaks HTTP. Post complex JSON payloads to internal microservices, invoke AWS Lambda via Function URLs, trigger GitHub Actions repository dispatch events, or trigger Stripe billing webhooks.
+                  Trigger anything that speaks HTTP. Post complex JSON payloads to internal
+                  microservices, invoke AWS Lambda via Function URLs, trigger GitHub Actions
+                  repository dispatch events, or trigger Stripe billing webhooks.
                 </p>
                 <div className="grid grid-cols-2 gap-3 pt-2 font-mono text-xs">
                   <div className="p-3 rounded-lg border border-border bg-card">
                     <span className="font-semibold block text-foreground">Custom Verbs</span>
-                    <span className="text-muted-foreground text-[11px]">GET, POST, PUT, PATCH, DELETE, HEAD</span>
+                    <span className="text-muted-foreground text-[11px]">
+                      GET, POST, PUT, PATCH, DELETE, HEAD
+                    </span>
                   </div>
                   <div className="p-3 rounded-lg border border-border bg-card">
                     <span className="font-semibold block text-foreground">Dynamic Tokens</span>
-                    <span className="text-muted-foreground text-[11px]">Timestamp & HMAC substitution</span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Timestamp & HMAC substitution
+                    </span>
                   </div>
                 </div>
               </div>
@@ -649,12 +727,15 @@ print(f"Scheduled: {job.id}")`,
               <div className="rounded-xl border border-border bg-foreground text-background p-6 font-mono text-xs space-y-3">
                 <div className="flex items-center justify-between border-b border-background/20 pb-2">
                   <span className="text-background/60">Outgoing Dispatch Payload Sample</span>
-                  <Badge variant="outline" className="text-[10px] text-background border-background/40">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] text-background border-background/40"
+                  >
                     HTTP POST
                   </Badge>
                 </div>
                 <pre className="text-[11px] leading-relaxed text-background/90 overflow-x-auto">
-{`POST /v2/billing/invoices/roll HTTP/1.1
+                  {`POST /v2/billing/invoices/roll HTTP/1.1
 Host: api.acme.dev
 Authorization: Bearer acj_live_9a7d••••
 Content-Type: application/json
@@ -702,7 +783,9 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   </div>
                   <div className="text-xs font-mono text-muted-foreground">
-                    <div>90-Day: <span className="text-foreground font-semibold">{svc.uptime90d}</span></div>
+                    <div>
+                      90-Day: <span className="text-foreground font-semibold">{svc.uptime90d}</span>
+                    </div>
                     <div className="text-[11px] opacity-70 capitalize mt-0.5">{svc.region}</div>
                   </div>
                 </div>
@@ -720,7 +803,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 Connects seamlessly with your existing stack
               </h2>
               <p className="mt-2 text-sm text-muted-foreground font-sans">
-                Native integrations for notification routing, incident escalation, and workflow automation.
+                Native integrations for notification routing, incident escalation, and workflow
+                automation.
               </p>
             </div>
 
@@ -786,7 +870,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <span className="font-mono text-2xl font-bold text-cobalt block mb-2">03</span>
                 <h3 className="font-semibold text-sm text-foreground">We Dispatch & Monitor</h3>
                 <p className="mt-2 text-xs text-muted-foreground font-sans leading-relaxed">
-                  Our distributed runner fleet executes your trigger on the exact second with automatic retries.
+                  Our distributed runner fleet executes your trigger on the exact second with
+                  automatic retries.
                 </p>
               </div>
 
@@ -794,7 +879,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <span className="font-mono text-2xl font-bold text-cobalt block mb-2">04</span>
                 <h3 className="font-semibold text-sm text-foreground">Instant Alerts</h3>
                 <p className="mt-2 text-xs text-muted-foreground font-sans leading-relaxed">
-                  Receive notifications in Slack, Discord, or PagerDuty if your endpoint returns errors.
+                  Receive notifications in Slack, Discord, or PagerDuty if your endpoint returns
+                  errors.
                 </p>
               </div>
             </div>
@@ -811,7 +897,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                   Programmatic control via REST API and SDKs
                 </h2>
                 <p className="text-sm text-muted-foreground font-sans leading-relaxed">
-                  Manage your scheduling fleet entirely through code. Integrate job creation into your CI/CD pipelines, Docker setup, or Terraform infrastructure as code.
+                  Manage your scheduling fleet entirely through code. Integrate job creation into
+                  your CI/CD pipelines, Docker setup, or Terraform infrastructure as code.
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-2">
@@ -855,7 +942,11 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
 
                 <div className="pt-2">
                   <Link to="/docs/api">
-                    <Button variant="ghost" size="sm" className="font-mono text-xs text-cobalt hover:underline p-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="font-mono text-xs text-cobalt hover:underline p-0"
+                    >
                       View complete OpenAPI Specification →
                     </Button>
                   </Link>
@@ -902,15 +993,19 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <Shield className="h-6 w-6 text-cobalt mb-2" />
                 <h3 className="font-semibold text-sm text-foreground">Envelope Key Encryption</h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  All auth headers and payload secrets are encrypted with AES-256-GCM. Keys are segregated per workspace.
+                  All auth headers and payload secrets are encrypted with AES-256-GCM. Keys are
+                  segregated per workspace.
                 </p>
               </div>
 
               <div className="rounded-xl border border-border bg-card p-6 space-y-2">
                 <Globe className="h-6 w-6 text-emerald-500 mb-2" />
-                <h3 className="font-semibold text-sm text-foreground">Dedicated Static Egress IPs</h3>
+                <h3 className="font-semibold text-sm text-foreground">
+                  Dedicated Static Egress IPs
+                </h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Whitelist our dedicated runner IP ranges directly in your AWS VPC or Cloudflare firewall rules.
+                  Whitelist our dedicated runner IP ranges directly in your AWS VPC or Cloudflare
+                  firewall rules.
                 </p>
               </div>
 
@@ -918,7 +1013,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <Activity className="h-6 w-6 text-amber-500 mb-2" />
                 <h3 className="font-semibold text-sm text-foreground">Immutable Audit Trails</h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Every job modification, manual trigger, and key generation event is permanently logged with actor metadata.
+                  Every job modification, manual trigger, and key generation event is permanently
+                  logged with actor metadata.
                 </p>
               </div>
             </div>
@@ -937,10 +1033,15 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="rounded-xl border border-border bg-card p-6 space-y-2">
-                <span className="font-mono text-xs text-cobalt font-bold">DATABASE REPLICATION</span>
-                <h3 className="font-semibold text-sm text-foreground">Nightly Cold Storage Backups</h3>
+                <span className="font-mono text-xs text-cobalt font-bold">
+                  DATABASE REPLICATION
+                </span>
+                <h3 className="font-semibold text-sm text-foreground">
+                  Nightly Cold Storage Backups
+                </h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Invokes database snapshot triggers, verifies integrity checksums, and alerts DBA teams on timeouts.
+                  Invokes database snapshot triggers, verifies integrity checksums, and alerts DBA
+                  teams on timeouts.
                 </p>
               </div>
 
@@ -948,23 +1049,30 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <span className="font-mono text-xs text-emerald-600 font-bold">SECURITY & TLS</span>
                 <h3 className="font-semibold text-sm text-foreground">SSL Expiry Sweeps</h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Runs daily checks across 10,000+ customer custom domains to prevent catastrophic certificate dropouts.
+                  Runs daily checks across 10,000+ customer custom domains to prevent catastrophic
+                  certificate dropouts.
                 </p>
               </div>
 
               <div className="rounded-xl border border-border bg-card p-6 space-y-2">
-                <span className="font-mono text-xs text-purple-600 font-bold">FINTECH & BILLING</span>
+                <span className="font-mono text-xs text-purple-600 font-bold">
+                  FINTECH & BILLING
+                </span>
                 <h3 className="font-semibold text-sm text-foreground">Monthly Invoicing Rollers</h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Dispatches recurring subscription charges with strict idempotency keys and zero double-charge risk.
+                  Dispatches recurring subscription charges with strict idempotency keys and zero
+                  double-charge risk.
                 </p>
               </div>
 
               <div className="rounded-xl border border-border bg-card p-6 space-y-2">
                 <span className="font-mono text-xs text-amber-600 font-bold">PERFORMANCE</span>
-                <h3 className="font-semibold text-sm text-foreground">Cache Warming & Revalidation</h3>
+                <h3 className="font-semibold text-sm text-foreground">
+                  Cache Warming & Revalidation
+                </h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Pre-generates heavy API queries and pre-warms CDN edge caches before peak morning traffic spikes.
+                  Pre-generates heavy API queries and pre-warms CDN edge caches before peak morning
+                  traffic spikes.
                 </p>
               </div>
 
@@ -972,7 +1080,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <span className="font-mono text-xs text-rose-600 font-bold">HEALTH MONITORING</span>
                 <h3 className="font-semibold text-sm text-foreground">High-Frequency Heartbeats</h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Pings core internal microservices every 60 seconds with strict timeout alerting to Slack.
+                  Pings core internal microservices every 60 seconds with strict timeout alerting to
+                  Slack.
                 </p>
               </div>
 
@@ -980,7 +1089,8 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                 <span className="font-mono text-xs text-blue-600 font-bold">DATA PIPELINES</span>
                 <h3 className="font-semibold text-sm text-foreground">ETL Batch Syncs</h3>
                 <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                  Triggers Snowflake and BigQuery incremental ingestion jobs with execution duration monitoring.
+                  Triggers Snowflake and BigQuery incremental ingestion jobs with execution duration
+                  monitoring.
                 </p>
               </div>
             </div>
@@ -1001,7 +1111,9 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                   type="button"
                   onClick={() => setAnnualBilling(false)}
                   className={`px-3 py-1 text-xs font-mono rounded-full transition-colors ${
-                    !annualBilling ? "bg-foreground text-background font-semibold" : "text-muted-foreground"
+                    !annualBilling
+                      ? "bg-foreground text-background font-semibold"
+                      : "text-muted-foreground"
                   }`}
                 >
                   Monthly
@@ -1010,7 +1122,9 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                   type="button"
                   onClick={() => setAnnualBilling(true)}
                   className={`px-3 py-1 text-xs font-mono rounded-full transition-colors flex items-center gap-1.5 ${
-                    annualBilling ? "bg-foreground text-background font-semibold" : "text-muted-foreground"
+                    annualBilling
+                      ? "bg-foreground text-background font-semibold"
+                      : "text-muted-foreground"
                   }`}
                 >
                   <span>Yearly</span>
@@ -1070,10 +1184,16 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
                   </p>
 
                   <ul className="mt-6 space-y-2.5 text-xs font-sans text-muted-foreground border-t border-border/60 pt-4">
-                    <li className="flex items-center gap-2 font-medium text-foreground">✓ Unlimited scheduled jobs</li>
-                    <li className="flex items-center gap-2 font-medium text-foreground">✓ Sub-second precision (up to 1/sec)</li>
+                    <li className="flex items-center gap-2 font-medium text-foreground">
+                      ✓ Unlimited scheduled jobs
+                    </li>
+                    <li className="flex items-center gap-2 font-medium text-foreground">
+                      ✓ Sub-second precision (up to 1/sec)
+                    </li>
                     <li className="flex items-center gap-2">✓ 90-day execution log retention</li>
-                    <li className="flex items-center gap-2">✓ Slack, Discord, PagerDuty webhooks</li>
+                    <li className="flex items-center gap-2">
+                      ✓ Slack, Discord, PagerDuty webhooks
+                    </li>
                     <li className="flex items-center gap-2">✓ Exponential retry backoff</li>
                     <li className="flex items-center gap-2">✓ 5 team member seats</li>
                   </ul>
@@ -1131,48 +1251,76 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
             </div>
 
             <Accordion type="single" collapsible className="space-y-3 font-sans text-xs">
-              <AccordionItem value="item-1" className="border border-border rounded-lg px-4 bg-card">
+              <AccordionItem
+                value="item-1"
+                className="border border-border rounded-lg px-4 bg-card"
+              >
                 <AccordionTrigger className="text-sm font-semibold hover:no-underline py-4">
                   How does AapnaCronJob differ from traditional server crontabs?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
-                  Traditional crontabs run locally on a single machine. If the server restarts, runs out of memory, or drops network connectivity, your cron job fails silently with zero notifications. AapnaCronJob dispatches HTTP requests from a multi-region runner cluster, retries on failure with exponential backoff, and alerts your team instantly when endpoints fail.
+                  Traditional crontabs run locally on a single machine. If the server restarts, runs
+                  out of memory, or drops network connectivity, your cron job fails silently with
+                  zero notifications. AapnaCronJob dispatches HTTP requests from a multi-region
+                  runner cluster, retries on failure with exponential backoff, and alerts your team
+                  instantly when endpoints fail.
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-2" className="border border-border rounded-lg px-4 bg-card">
+              <AccordionItem
+                value="item-2"
+                className="border border-border rounded-lg px-4 bg-card"
+              >
                 <AccordionTrigger className="text-sm font-semibold hover:no-underline py-4">
                   What timezones are supported?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
-                  Every standard IANA timezone is supported (e.g., America/New_York, Europe/London, Asia/Kolkata). AapnaCronJob automatically adjusts for Daylight Saving Time (DST) transitions, so your 09:00 AM daily reports run at 09:00 AM local time year-round.
+                  Every standard IANA timezone is supported (e.g., America/New_York, Europe/London,
+                  Asia/Kolkata). AapnaCronJob automatically adjusts for Daylight Saving Time (DST)
+                  transitions, so your 09:00 AM daily reports run at 09:00 AM local time year-round.
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-3" className="border border-border rounded-lg px-4 bg-card">
+              <AccordionItem
+                value="item-3"
+                className="border border-border rounded-lg px-4 bg-card"
+              >
                 <AccordionTrigger className="text-sm font-semibold hover:no-underline py-4">
                   What happens when an endpoint fails or times out?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
-                  If your server returns an HTTP 5xx status or times out, AapnaCronJob triggers your configured retry policy (up to 5 attempts with fixed or exponential backoff). If all attempts fail, AapnaCronJob delivers an immediate incident payload to your connected Slack, Discord, or PagerDuty channels.
+                  If your server returns an HTTP 5xx status or times out, AapnaCronJob triggers your
+                  configured retry policy (up to 5 attempts with fixed or exponential backoff). If
+                  all attempts fail, AapnaCronJob delivers an immediate incident payload to your
+                  connected Slack, Discord, or PagerDuty channels.
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-4" className="border border-border rounded-lg px-4 bg-card">
+              <AccordionItem
+                value="item-4"
+                className="border border-border rounded-lg px-4 bg-card"
+              >
                 <AccordionTrigger className="text-sm font-semibold hover:no-underline py-4">
                   Can I whitelist AapnaCronJob's runner IP addresses?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
-                  Yes! All Pro and Enterprise accounts have access to published, static egress IP ranges that you can add directly to your AWS Security Groups, Cloudflare WAF, or firewall configurations.
+                  Yes! All Pro and Enterprise accounts have access to published, static egress IP
+                  ranges that you can add directly to your AWS Security Groups, Cloudflare WAF, or
+                  firewall configurations.
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-5" className="border border-border rounded-lg px-4 bg-card">
+              <AccordionItem
+                value="item-5"
+                className="border border-border rounded-lg px-4 bg-card"
+              >
                 <AccordionTrigger className="text-sm font-semibold hover:no-underline py-4">
                   How fast can I get started with AapnaCronJob?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
-                  You can get started immediately in under 30 seconds. The developer console includes full schedule inventory management, live telemetry streaming, audit trails, and sub-second execution triggers ready for your endpoints.
+                  You can get started immediately in under 30 seconds. The developer console
+                  includes full schedule inventory management, live telemetry streaming, audit
+                  trails, and sub-second execution triggers ready for your endpoints.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -1187,11 +1335,15 @@ User-Agent: AapnaCronJob-Runner/3.4 (https://aapnacronjob.com)
               Schedule your first production job in 30 seconds.
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground font-sans max-w-xl mx-auto">
-              Join thousands of developers relying on AapnaCronJob for mission-critical backups, billing, webhooks, and endpoint health checks.
+              Join thousands of developers relying on AapnaCronJob for mission-critical backups,
+              billing, webhooks, and endpoint health checks.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <Link to="/app">
-                <Button size="lg" className="bg-foreground text-background font-mono text-sm font-semibold hover:bg-foreground/90 h-12 px-8">
+                <Button
+                  size="lg"
+                  className="bg-foreground text-background font-mono text-sm font-semibold hover:bg-foreground/90 h-12 px-8"
+                >
                   Launch Console Now
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>

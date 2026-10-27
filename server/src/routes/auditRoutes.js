@@ -10,6 +10,10 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const { action, targetType, page = 1, limit = 50 } = req.query;
     const query = {};
 
+    if (req.user && req.user.role !== 'admin') {
+      query.userId = req.user._id;
+    }
+
     if (action) query.action = action;
     if (targetType) query.targetType = targetType;
 

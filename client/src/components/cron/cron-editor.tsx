@@ -1,10 +1,5 @@
 import { useState, useMemo } from "react";
-import {
-  validateCron,
-  humanizeCron,
-  getNextRuns,
-  CRON_PRESETS,
-} from "@/lib/cron";
+import { validateCron, humanizeCron, getNextRuns, CRON_PRESETS } from "@/lib/cron";
 import { formatInZone, shortFutureLabel } from "@/lib/format";
 import { COMMON_TIMEZONES } from "@/components/clock/live-clock";
 import { Input } from "@/components/ui/input";
@@ -162,12 +157,8 @@ export function CronEditor({
                   <span className="font-medium text-xs text-foreground">{p.label}</span>
                   {isSelected && <Check className="h-3.5 w-3.5 text-cobalt" />}
                 </div>
-                <code className="mt-1 font-mono text-[11px] text-muted-foreground">
-                  {p.expr}
-                </code>
-                <span className="mt-1 text-[10px] text-muted-foreground/80 truncate">
-                  {p.hint}
-                </span>
+                <code className="mt-1 font-mono text-[11px] text-muted-foreground">{p.expr}</code>
+                <span className="mt-1 text-[10px] text-muted-foreground/80 truncate">{p.hint}</span>
               </button>
             );
           })}
@@ -269,7 +260,10 @@ export function CronEditor({
                 className="font-mono text-base font-semibold tracking-wider text-foreground bg-background max-w-sm"
               />
               {validation.ok ? (
-                <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 bg-emerald-500/10 font-mono text-[11px]">
+                <Badge
+                  variant="outline"
+                  className="text-emerald-600 border-emerald-500/30 bg-emerald-500/10 font-mono text-[11px]"
+                >
                   Valid Syntax
                 </Badge>
               ) : (
@@ -312,10 +306,7 @@ export function CronEditor({
             {nextRuns.map((date, idx) => {
               const diffMs = date.getTime() - Date.now();
               return (
-                <div
-                  key={idx}
-                  className="rounded border border-border/60 bg-card p-2 text-center"
-                >
+                <div key={idx} className="rounded border border-border/60 bg-card p-2 text-center">
                   <span className="block font-mono text-xs font-semibold text-foreground">
                     {formatInZone(date, timezone)}
                   </span>

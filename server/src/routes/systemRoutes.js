@@ -140,4 +140,68 @@ router.post('/system/self-pinger/ping-now', async (req, res) => {
   });
 });
 
+import Setting from '../models/Setting.js';
+
+// GET /api/system/settings
+router.get('/system/settings', authenticateToken, async (req, res, next) => {
+  try {
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: {
+          workspaceName: 'Production Infrastructure',
+          supportEmail: 'engineering@acme.dev',
+          defaultTimeout: 30,
+          retentionDays: 30,
+        },
+      });
+    }
+
+    let settings = await Setting.findOne({ userId: req.user._id });
+    if (!settings) {
+      settings = await Setting.create({
+        userId: req.user._id,
+        workspaceName: 'Production Infrastructure',
+        supportEmail: req.user.email || 'engineering@acme.dev',
+        defaultTimeout: 30,
+        retentionDays: 30,
+      });
+    }
+
+    res.json({ success: true, data: settings });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/system/settings
+router.post('/system/settings', authenticateToken, async (req, res, next) => {
+  try {
+    const { workspaceName, supportEmail, defaultTimeout, retentionDays } = req.body;
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: { workspaceName, supportEmail, defaultTimeout, retentionDays },
+      });
+    }
+
+    let settings = await Setting.findOneAndUpdate(
+      { userId: req.user._id },
+      {
+        $set: {
+          ...(workspaceName !== undefined && { workspaceName }),
+          ...(supportEmail !== undefined && { supportEmail }),
+          ...(defaultTimeout !== undefined && { defaultTimeout: Number(defaultTimeout) }),
+          ...(retentionDays !== undefined && { retentionDays: Number(retentionDays) }),
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true, data: settings });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

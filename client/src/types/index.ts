@@ -28,7 +28,9 @@ export interface Job {
   notifyWebhook: boolean;
   headers: Array<{ key: string; value: string }>;
   hasBody: boolean;
+  body?: string | null | undefined;
   authMode: AuthMode;
+  authToken?: string | undefined;
   tags: string[];
 }
 
@@ -50,7 +52,19 @@ export interface AuditEntry {
   actor: string;
   action: string;
   target: string;
-  kind: "job.updated" | "job.created" | "job.deleted" | "settings.updated" | "key.created" | "member.added" | "plan.changed";
+  kind:
+    | "job.updated"
+    | "job.created"
+    | "job.deleted"
+    | "settings.updated"
+    | "key.created"
+    | "key.revoked"
+    | "member.added"
+    | "member.invited"
+    | "member.removed"
+    | "channel.created"
+    | "channel.deleted"
+    | "plan.changed";
 }
 
 export interface TeamMember {
@@ -66,6 +80,7 @@ export interface ApiKey {
   id: string;
   label: string;
   prefix: string;
+  secretKey?: string | undefined;
   createdAt: string;
   createdMinutesAgo: number;
   lastUsedMinutesAgo: number | null;
@@ -83,7 +98,7 @@ export interface Integration {
 
 export interface NotificationChannel {
   id: string;
-  type: "email" | "webhook" | "slack" | "discord";
+  type: "email" | "webhook" | "slack" | "discord" | "pagerduty";
   label: string;
   target: string;
   events: Array<"failures" | "retries" | "recovers" | "warnings">;

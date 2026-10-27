@@ -25,10 +25,7 @@ export function SettingsTimezonePage() {
 
   return (
     <AppShell
-      breadcrumbs={[
-        { label: "Settings", to: "/app/settings" },
-        { label: "Timezone & Clock" },
-      ]}
+      breadcrumbs={[{ label: "Settings", to: "/app/settings" }, { label: "Timezone & Clock" }]}
     >
       <div className="space-y-6 max-w-4xl">
         <div className="border-b border-border/80 pb-6">
@@ -37,7 +34,8 @@ export function SettingsTimezonePage() {
             Timezone & Clock Preferences
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
-            Configure how timestamps, scheduling timelines, and the header clock render across the platform.
+            Configure how timestamps, scheduling timelines, and the header clock render across the
+            platform.
           </p>
         </div>
 

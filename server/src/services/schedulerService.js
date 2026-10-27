@@ -245,18 +245,19 @@ export async function processDueRetries() {
       ]
     }).limit(10);
 
-    for (const exec of dueRetries) {
+    const retryPromises = dueRetries.map(async (exec) => {
       const job = await Job.findById(exec.jobId);
       if (!job) {
         exec.status = 'failed';
         exec.errorDetails = { message: 'Parent job was deleted during retry phase' };
         await exec.save();
-        continue;
+        return;
       }
-
       await performExecution(job, exec);
       retryCount++;
-    }
+    });
+
+    await Promise.allSettled(retryPromises);
   } catch (err) {
     logger.error('Error processing due retries', { error: err.message });
   }
@@ -289,6 +290,8 @@ export async function processSchedulerTick(source = 'scheduler') {
     enabled: true,
     nextRunAt: { $lte: now, $ne: null }
   }).sort({ nextRunAt: 1 }).limit(25);
+
+  const claimedJobsToExecute = [];
 
   for (const job of dueJobs) {
     try {
@@ -348,15 +351,25 @@ export async function processSchedulerTick(source = 'scheduler') {
       await job.save();
 
       summary.claimed++;
-
-      // Perform execution asynchronously or await safely
-      await performExecution(job, execution);
+      claimedJobsToExecute.push({ job, execution });
     } catch (err) {
-      logger.error(`Error processing scheduled job ${job.name}: ${err.message}`, {
+      logger.error(`Error claiming scheduled job ${job.name}: ${err.message}`, {
         jobId: job._id,
       });
       summary.errors.push(`${job.name}: ${err.message}`);
     }
+  }
+
+  // Execute all claimed jobs concurrently without blocking tick or expiring leader lease
+  if (claimedJobsToExecute.length > 0) {
+    await Promise.allSettled(
+      claimedJobsToExecute.map(({ job, execution }) =>
+        performExecution(job, execution).catch((execErr) => {
+          logger.error(`Error during execution of ${job.name}: ${execErr.message}`);
+          summary.errors.push(`${job.name}: ${execErr.message}`);
+        })
+      )
+    );
   }
 
   return summary;

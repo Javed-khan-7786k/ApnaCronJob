@@ -29,7 +29,9 @@ export function QuickstartDocPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-12">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-2">
-              <Link to="/docs" className="hover:text-foreground">Docs</Link>
+              <Link to="/docs" className="hover:text-foreground">
+                Docs
+              </Link>
               <span>/</span>
               <span>Quickstart</span>
             </div>
@@ -37,7 +39,8 @@ export function QuickstartDocPage() {
               Quickstart Guide
             </h1>
             <p className="mt-2 text-sm text-muted-foreground font-sans">
-              Learn how to schedule an HTTP endpoint, configure retry rules, and inspect logs in 3 simple steps.
+              Learn how to schedule an HTTP endpoint, configure retry rules, and inspect logs in 3
+              simple steps.
             </p>
           </div>
 
@@ -49,10 +52,11 @@ export function QuickstartDocPage() {
                 Expose an HTTP endpoint or webhook handler
               </h2>
               <p>
-                Your destination server needs an accessible URL that accepts HTTP GET or POST requests. For example, a Next.js route handler or an AWS Lambda Function URL:
+                Your destination server needs an accessible URL that accepts HTTP GET or POST
+                requests. For example, a Next.js route handler or an AWS Lambda Function URL:
               </p>
               <pre className="rounded bg-paper-sunken border border-border/80 p-3 font-mono text-[11px] text-foreground overflow-x-auto">
-{`// app/api/cron/sync/route.ts (Next.js App Router)
+                {`// app/api/cron/sync/route.ts (Next.js App Router)
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization");
   if (auth !== \`Bearer \${process.env.CRON_SECRET}\`) {
@@ -72,10 +76,14 @@ export async function POST(req: Request) {
                 Create a schedule in the console or via cURL
               </h2>
               <p>
-                You can create the job via the UI at <Link to="/app/jobs/new" className="text-cobalt underline">/app/jobs/new</Link> or dispatch it via our REST API:
+                You can create the job via the UI at{" "}
+                <Link to="/app/jobs/new" className="text-cobalt underline">
+                  /app/jobs/new
+                </Link>{" "}
+                or dispatch it via our REST API:
               </p>
               <pre className="rounded bg-paper-sunken border border-border/80 p-3 font-mono text-[11px] text-foreground overflow-x-auto">
-{`curl -X POST https://api.aapnacronjob.com/v1/jobs \\
+                {`curl -X POST https://api.aapnacronjob.com/v1/jobs \\
   -H "Authorization: Bearer acj_live_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -96,7 +104,8 @@ export async function POST(req: Request) {
                 Inspect execution history and verify alerts
               </h2>
               <p>
-                Head to your dashboard to see upcoming scheduled dispatches, latency graphs, and response payload inspections in real time.
+                Head to your dashboard to see upcoming scheduled dispatches, latency graphs, and
+                response payload inspections in real time.
               </p>
             </div>
           </div>

@@ -31,7 +31,8 @@ export function PricingPage() {
               Simple, transparent pricing for mission-critical scheduling.
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              No hidden surge charges, no opaque credit tokens. Pay for the concurrency and reliability you need.
+              No hidden surge charges, no opaque credit tokens. Pay for the concurrency and
+              reliability you need.
             </p>
 
             <div className="pt-4 flex justify-center">
@@ -40,7 +41,9 @@ export function PricingPage() {
                   type="button"
                   onClick={() => setAnnual(false)}
                   className={`px-4 py-1.5 text-xs font-mono rounded-full transition-colors ${
-                    !annual ? "bg-foreground text-background font-semibold" : "text-muted-foreground"
+                    !annual
+                      ? "bg-foreground text-background font-semibold"
+                      : "text-muted-foreground"
                   }`}
                 >
                   Monthly billing
@@ -258,7 +261,9 @@ export function PricingPage() {
                     <td className="p-3 font-semibold text-foreground">Uptime SLA</td>
                     <td className="p-3 text-center text-muted-foreground">Best effort</td>
                     <td className="p-3 text-center text-foreground">99.9%</td>
-                    <td className="p-3 text-center font-bold text-emerald-600">99.99% Contractual</td>
+                    <td className="p-3 text-center font-bold text-emerald-600">
+                      99.99% Contractual
+                    </td>
                   </tr>
                 </tbody>
               </table>

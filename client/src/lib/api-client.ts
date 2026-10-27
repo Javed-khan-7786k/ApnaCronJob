@@ -14,7 +14,7 @@ export function getApiBaseUrl(): string {
   }
 
   // Primary source of truth: Environment variable VITE_API_URL
-  const envUrl = import.meta.env.VITE_API_URL;
+  const envUrl = (import.meta.env as Record<string, string | undefined>)["VITE_API_URL"];
   if (envUrl) {
     return envUrl.replace(/\/+$/, "");
   }
@@ -80,7 +80,7 @@ class ApiError extends Error {
 
 async function request<T = any>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
   const baseUrl = getApiBaseUrl();
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
@@ -210,7 +210,12 @@ export const apiClient = {
       return res;
     },
 
-    async register(data: { username: string; email: string; password: string; telegramChatId?: string }) {
+    async register(data: {
+      username: string;
+      email: string;
+      password: string;
+      telegramChatId?: string;
+    }) {
       const res = await request("/auth/register", {
         method: "POST",
         body: JSON.stringify(data),
@@ -252,7 +257,14 @@ export const apiClient = {
    * Jobs Scheduling Engine
    */
   jobs: {
-    async list(params?: { search?: string; tag?: string; status?: string; enabled?: boolean; page?: number; limit?: number }) {
+    async list(params?: {
+      search?: string;
+      tag?: string;
+      status?: string;
+      enabled?: boolean;
+      page?: number;
+      limit?: number;
+    }) {
       const query = new URLSearchParams();
       if (params?.search) query.set("search", params.search);
       if (params?.tag) query.set("tag", params.tag);
@@ -319,7 +331,13 @@ export const apiClient = {
    * Executions & Telemetry
    */
   executions: {
-    async list(params?: { jobId?: string; status?: string; triggerSource?: string; page?: number; limit?: number }) {
+    async list(params?: {
+      jobId?: string;
+      status?: string;
+      triggerSource?: string;
+      page?: number;
+      limit?: number;
+    }) {
       const query = new URLSearchParams();
       if (params?.jobId) query.set("jobId", params.jobId);
       if (params?.status) query.set("status", params.status);
@@ -344,7 +362,13 @@ export const apiClient = {
       return request("/notifications", { method: "GET" });
     },
 
-    async create(data: { type: string; label: string; target: string; events?: string[]; enabled?: boolean }) {
+    async create(data: {
+      type: string;
+      label: string;
+      target: string;
+      events?: string[];
+      enabled?: boolean;
+    }) {
       return request("/notifications", {
         method: "POST",
         body: JSON.stringify(data),
@@ -422,6 +446,24 @@ export const apiClient = {
   },
 
   /**
+   * Integrations Hub
+   */
+  integrations: {
+    async list() {
+      return request("/integrations", { method: "GET" });
+    },
+    async toggle(id: string) {
+      return request(`/integrations/${encodeURIComponent(id)}/toggle`, { method: "POST" });
+    },
+    async updateConfig(id: string, config: any) {
+      return request(`/integrations/${encodeURIComponent(id)}/config`, {
+        method: "PUT",
+        body: JSON.stringify({ config }),
+      });
+    },
+  },
+
+  /**
    * Cluster Monitoring
    */
   monitoring: {
@@ -445,6 +487,23 @@ export const apiClient = {
     },
     async pingNow() {
       return request("/system/self-pinger/ping-now", { method: "POST" });
+    },
+    async getHealth() {
+      return request("/health", { method: "GET" });
+    },
+    async getSettings() {
+      return request("/system/settings", { method: "GET" });
+    },
+    async updateSettings(data: {
+      workspaceName?: string | undefined;
+      supportEmail?: string | undefined;
+      defaultTimeout?: number | undefined;
+      retentionDays?: number | undefined;
+    }) {
+      return request("/system/settings", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
     },
   },
 };

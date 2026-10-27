@@ -20,10 +20,14 @@ export const Route = createFileRoute("/app/calendar")({
 });
 
 export function CalendarPage() {
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
-  const currentDate = new Date();
-  const currentMonth = currentDate.toLocaleString("en-US", { month: "long" });
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const currentMonthIndex = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.toLocaleString("en-US", { month: "long" });
+
+  // Calculate actual days in this month
+  const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+  const [selectedDay, setSelectedDay] = useState(() => Math.min(new Date().getDate(), daysInMonth));
   const [jobs, setJobs] = useState<Job[]>(() => DataStore.getJobs());
 
   useEffect(() => {
@@ -32,20 +36,59 @@ export function CalendarPage() {
     });
   }, []);
 
-  // Generate days in month
-  const daysInMonth = 31;
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
 
-  // Compute scheduled runs across all jobs
+  const handlePrevMonth = () => {
+    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    setSelectedDay(1);
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    setSelectedDay(1);
+  };
+
+  // Compute scheduled runs specifically for selected calendar day
   const runsForDay = useMemo(() => {
-    return jobs.map((j) => {
-      const runs = getNextRuns(j.cron, { count: 3 });
-      return {
+    const targetStart = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      selectedDay,
+      0,
+      0,
+      0,
+    );
+    const targetEnd = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      selectedDay,
+      23,
+      59,
+      59,
+    );
+
+    const matches = jobs
+      .map((j) => {
+        const runs = getNextRuns(j.cron, { count: 8, fromDate: targetStart }).filter(
+          (r) => r >= targetStart && r <= targetEnd,
+        );
+        return {
+          job: j,
+          runs,
+        };
+      })
+      .filter((item) => item.runs.length > 0);
+
+    // If no jobs run on this specific day, show next upcoming runs
+    if (matches.length === 0) {
+      return jobs.map((j) => ({
         job: j,
-        runs,
-      };
-    });
-  }, [jobs]);
+        runs: getNextRuns(j.cron, { count: 2, fromDate: targetStart }),
+      }));
+    }
+
+    return matches;
+  }, [jobs, currentDate, selectedDay]);
 
   return (
     <AppShell breadcrumbs={[{ label: "Schedule Calendar" }]}>
@@ -62,12 +105,26 @@ export function CalendarPage() {
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="text-muted-foreground">{currentMonth} {currentYear}</span>
+            <span className="text-muted-foreground">
+              {currentMonth} {currentYear}
+            </span>
             <div className="flex items-center border border-border rounded-md">
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevMonth}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                title="Previous Month"
+              >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNextMonth}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                title="Next Month"
+              >
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -129,7 +186,8 @@ export function CalendarPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <Link
-                      to={`/app/jobs/${job.id}`}
+                      to="/app/jobs/$jobId"
+                      params={{ jobId: job.id }}
                       className="font-bold text-foreground hover:underline"
                     >
                       {job.name}
@@ -151,7 +209,7 @@ export function CalendarPage() {
                     <span className="text-[10px] text-muted-foreground">UTC Reference</span>
                   </div>
 
-                  <Link to={`/app/jobs/${job.id}`}>
+                  <Link to="/app/jobs/$jobId" params={{ jobId: job.id }}>
                     <Button variant="outline" size="sm" className="h-7 text-xs font-mono">
                       Inspect
                     </Button>

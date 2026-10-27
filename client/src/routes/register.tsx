@@ -15,7 +15,8 @@ export const Route = createFileRoute("/register")({
   head: () =>
     pageHead({
       title: "Create Account — AapnaCronJob",
-      description: "Start scheduling jobs with sub-second precision. Sign up with Google, GitHub, or email.",
+      description:
+        "Start scheduling jobs with sub-second precision. Sign up with Google, GitHub, or email.",
     }),
   component: RegisterPage,
 });
@@ -148,7 +149,12 @@ export function RegisterPage() {
                   onChange={(e) => {
                     setName(e.target.value);
                     if (!username) {
-                      setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 20));
+                      setUsername(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9_-]/g, "_")
+                          .slice(0, 20),
+                      );
                     }
                   }}
                   placeholder="e.g. Alex Rivera"
@@ -164,7 +170,9 @@ export function RegisterPage() {
                 </label>
                 <Input
                   value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                  onChange={(e) =>
+                    setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))
+                  }
                   placeholder="e.g. alex_rivera"
                   autoComplete="username"
                   className="text-xs font-mono"
@@ -240,8 +248,14 @@ export function RegisterPage() {
 
               <p className="text-[10px] text-muted-foreground text-center font-sans">
                 By creating an account, you agree to our{" "}
-                <Link to="/terms" className="underline hover:text-foreground">Terms</Link> and{" "}
-                <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>.
+                <Link to="/terms" className="underline hover:text-foreground">
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy" className="underline hover:text-foreground">
+                  Privacy Policy
+                </Link>
+                .
               </p>
             </form>
           </div>

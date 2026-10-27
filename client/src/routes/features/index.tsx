@@ -21,7 +21,8 @@ export const Route = createFileRoute("/features/")({
   head: () =>
     pageHead({
       title: "Platform Features — AapnaCronJob",
-      description: "Explore AapnaCronJob's distributed cron engine, HTTP monitoring, and exponential retry system.",
+      description:
+        "Explore AapnaCronJob's distributed cron engine, HTTP monitoring, and exponential retry system.",
     }),
   component: FeaturesOverviewPage,
 });
@@ -31,47 +32,72 @@ export function FeaturesOverviewPage() {
     {
       title: "Cron Scheduler",
       tagline: "Sub-Second Precision Engine",
-      description: "Execute HTTP and webhook triggers with millisecond accuracy across globally distributed runner nodes.",
+      description:
+        "Execute HTTP and webhook triggers with millisecond accuracy across globally distributed runner nodes.",
       to: "/features/cron-scheduler",
       icon: Clock,
       color: "text-cobalt",
-      highlights: ["5-field standard cron syntax", "Timezone aware with DST compensation", "Zero double-execution guarantee"],
+      highlights: [
+        "5-field standard cron syntax",
+        "Timezone aware with DST compensation",
+        "Zero double-execution guarantee",
+      ],
     },
     {
       title: "HTTP Health Monitoring",
       tagline: "Global Endpoint Verification",
-      description: "Continuous pinging, SSL certificate expiration audits, and response payload validation.",
+      description:
+        "Continuous pinging, SSL certificate expiration audits, and response payload validation.",
       to: "/features/http-monitoring",
       icon: Activity,
       color: "text-emerald-500",
-      highlights: ["Response time latency graphs", "TLS handshake validation", "Configurable HTTP status matchers"],
+      highlights: [
+        "Response time latency graphs",
+        "TLS handshake validation",
+        "Configurable HTTP status matchers",
+      ],
     },
     {
       title: "Retries & Fault Handling",
       tagline: "Automated Self-Healing",
-      description: "Exponential backoff algorithms with jitter protect against transient network failures without thundering herds.",
+      description:
+        "Exponential backoff algorithms with jitter protect against transient network failures without thundering herds.",
       to: "/features/retries",
       icon: Repeat,
       color: "text-amber-500",
-      highlights: ["Up to 5 automated retries", "Fixed or exponential backoff", "Per-attempt status logging"],
+      highlights: [
+        "Up to 5 automated retries",
+        "Fixed or exponential backoff",
+        "Per-attempt status logging",
+      ],
     },
     {
       title: "Multi-Channel Notifications",
       tagline: "Instant Incident Routing",
-      description: "Dispatch urgent alerts to Slack, Discord, PagerDuty, or custom webhooks the second an endpoint fails.",
+      description:
+        "Dispatch urgent alerts to Slack, Discord, PagerDuty, or custom webhooks the second an endpoint fails.",
       to: "/features/notifications",
       icon: Bell,
       color: "text-rose-500",
-      highlights: ["Channel escalation policies", "Recovery confirmation alerts", "Customizable alert bodies"],
+      highlights: [
+        "Channel escalation policies",
+        "Recovery confirmation alerts",
+        "Customizable alert bodies",
+      ],
     },
     {
       title: "Webhook Scheduling",
       tagline: "Secure Outgoing Dispatches",
-      description: "Send POST, PUT, and PATCH payloads signed with HMAC-SHA256 headers for cryptographically verified execution.",
+      description:
+        "Send POST, PUT, and PATCH payloads signed with HMAC-SHA256 headers for cryptographically verified execution.",
       to: "/features/webhooks",
       icon: Webhook,
       color: "text-purple-500",
-      highlights: ["Dynamic timestamp variables", "Custom encrypted headers", "Payload replay protection"],
+      highlights: [
+        "Dynamic timestamp variables",
+        "Custom encrypted headers",
+        "Payload replay protection",
+      ],
     },
   ];
 
@@ -87,7 +113,8 @@ export function FeaturesOverviewPage() {
               Built for engineering teams who cannot afford silent failures.
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Discover how AapnaCronJob combines a modern developer interface with carrier-grade distributed scheduling.
+              Discover how AapnaCronJob combines a modern developer interface with carrier-grade
+              distributed scheduling.
             </p>
           </div>
 
@@ -105,9 +132,7 @@ export function FeaturesOverviewPage() {
                     </div>
                     <div>
                       <span className="eyebrow block text-cobalt">{f.tagline}</span>
-                      <h2 className="font-display text-xl font-bold text-foreground">
-                        {f.title}
-                      </h2>
+                      <h2 className="font-display text-xl font-bold text-foreground">{f.title}</h2>
                     </div>
                     <p className="text-xs text-muted-foreground font-sans leading-relaxed">
                       {f.description}
@@ -140,11 +165,15 @@ export function FeaturesOverviewPage() {
               Ready to test drive the entire suite?
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground font-sans max-w-xl mx-auto">
-              Launch our developer console with schedule inventory, live telemetry history, and timezone preferences.
+              Launch our developer console with schedule inventory, live telemetry history, and
+              timezone preferences.
             </p>
             <div className="pt-2">
               <Link to="/app">
-                <Button size="lg" className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90">
+                <Button
+                  size="lg"
+                  className="bg-foreground text-background font-mono text-xs font-semibold hover:bg-foreground/90"
+                >
                   Open Developer Console Now →
                 </Button>
               </Link>
