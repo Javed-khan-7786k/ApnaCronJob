@@ -74,10 +74,10 @@ export function TelegramConfig() {
     <div className="max-w-4xl mx-auto space-y-6 text-xs">
       <div>
         <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-          <Send className="w-5 h-5 text-sky-400" /> Telegram Bot & Notification Center
+          <Send className="w-5 h-5 text-sky-400" /> Aapna Cron Job & Telegram Alerts
         </h2>
         <p className="text-slate-400 mt-1">
-          Control your scheduler from Telegram and receive instant failure and recovery alerts
+          Control scheduled tasks from Telegram and receive instant failure and recovery notifications
         </p>
       </div>
 

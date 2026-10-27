@@ -116,7 +116,7 @@ export async function executeHttpRequest({
 
   // Build clean request headers
   const requestHeaders = {
-    'User-Agent': 'ApnaScheduler/1.0 (+https://github.com/aapna-scheduler)',
+    'User-Agent': 'AapnaCronJob/1.0 (+https://github.com/aapna-cron-job)',
     'Accept': 'application/json, text/plain, */*',
     ...headers,
   };

@@ -144,7 +144,7 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
   switch (command) {
     case '/start':
     case '/help': {
-      const helpMsg = `🤖 <b>Apna Scheduler OS Bot Commands:</b>
+      const helpMsg = `🤖 <b>Aapna Cron Job Bot Commands:</b>
 
 /status - Health of API, DB, and Scheduler
 /jobs - List active scheduled jobs

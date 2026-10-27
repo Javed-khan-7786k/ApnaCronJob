@@ -81,7 +81,7 @@ export function Dashboard() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800">
         <div>
           <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            Scheduler Overview
+            Aapna Cron Job Overview
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Render Keepalive &bull; Distributed Retries &bull; Asia/Kolkata Timezone Engine

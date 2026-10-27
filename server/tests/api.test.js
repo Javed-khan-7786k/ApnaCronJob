@@ -8,7 +8,7 @@ describe('API Health and Security Tests', () => {
     const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('status', 'ok');
-    expect(res.body).toHaveProperty('service', 'apna-scheduler-os');
+    expect(res.body).toHaveProperty('service', 'aapna-cron-job');
     expect(res.body).toHaveProperty('uptime');
   });
 

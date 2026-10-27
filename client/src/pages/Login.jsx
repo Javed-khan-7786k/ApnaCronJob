@@ -30,11 +30,11 @@ export function Login() {
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-600 shadow-lg shadow-emerald-950 font-bold text-white text-xl">
-            AS
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-600 shadow-lg shadow-emerald-950 font-bold text-white text-base">
+            ACJ
           </div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
-            Apna Scheduler OS
+            Aapna Cron Job
           </h1>
           <p className="text-xs text-slate-400">
             Personal Automation & Distributed Cron Management

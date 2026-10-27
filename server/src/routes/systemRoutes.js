@@ -16,7 +16,7 @@ router.get('/health', (req, res) => {
     status: 'ok',
     uptime: uptimeSeconds,
     timestamp: new Date().toISOString(),
-    service: 'apna-scheduler-os',
+    service: 'aapna-cron-job',
   });
 });
 

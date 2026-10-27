@@ -71,7 +71,7 @@ export function Sidebar({ isOpen, onClose }) {
         </nav>
 
         <div className="p-3 border-t border-slate-800 text-[11px] text-slate-500 font-mono">
-          <div>Apna Scheduler v1.0.0</div>
+          <div>Aapna Cron Job v1.0.0</div>
           <div className="text-slate-600">Render &bull; Atlas &bull; Telegram</div>
         </div>
       </aside>

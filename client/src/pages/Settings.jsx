@@ -46,7 +46,7 @@ export function Settings() {
         const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(res.data.data, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute('href', dataStr);
-        downloadAnchor.setAttribute('download', `apna-scheduler-backup-${new Date().toISOString().slice(0, 10)}.json`);
+        downloadAnchor.setAttribute('download', `aapna-cron-job-backup-${new Date().toISOString().slice(0, 10)}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();

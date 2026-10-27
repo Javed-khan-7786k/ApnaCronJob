@@ -50,12 +50,12 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }) {
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shadow-md shadow-emerald-950 font-bold text-white text-base">
-            AS
+          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shadow-md shadow-emerald-950 font-bold text-white text-xs">
+            ACJ
           </div>
           <div className="hidden sm:block">
             <h1 className="text-sm font-bold tracking-tight text-slate-100 flex items-center gap-1.5">
-              Apna Scheduler <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">OS</span>
+              Aapna Cron Job <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO</span>
             </h1>
             <p className="text-[10px] text-slate-400 -mt-0.5">Reliable Cron & HTTP Automation</p>
           </div>
