@@ -1,0 +1,19 @@
+{
+  "name": "apna-scheduler",
+  "version": "1.0.0",
+  "description": "Apna Scheduler - Personal MERN-Based Automation & Cron Job OS",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "start": "npm run start --prefix server",
+    "build": "npm run build --prefix client",
+    "test": "npm run test --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "keywords": ["cron", "scheduler", "automation", "render-keepalive", "telegram-bot"],
+  "author": "Apna Scheduler Team",
+  "license": "MIT"
+}

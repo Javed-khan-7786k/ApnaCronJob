@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: apna-scheduler-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: apna_scheduler
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  scheduler-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apna-scheduler-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/apna_scheduler
+      - JWT_SECRET=change_this_to_a_long_random_jwt_secret_in_prod_123456
+      - INTERNAL_TICK_SECRET=your_secure_internal_tick_secret_key_here
+      - SCHEDULER_ENABLED=true
+      - SCHEDULER_TICK_INTERVAL_MS=30000
+      - DEFAULT_TIMEZONE=Asia/Kolkata
+      - TELEGRAM_BOT_TOKEN=
+      - TELEGRAM_ALLOWED_CHAT_IDS=
+      - TELEGRAM_POLLING_ENABLED=false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  mongo-data:

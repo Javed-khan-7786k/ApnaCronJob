@@ -1,0 +1,130 @@
+import express from 'express';
+import Execution from '../models/Execution.js';
+import Job from '../models/Job.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { performExecution } from '../services/schedulerService.js';
+import { logAuditEvent } from '../services/auditService.js';
+
+const router = express.Router();
+
+// GET /api/executions
+router.get('/', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId, status, triggerSource, page = 1, limit = 50 } = req.query;
+    const query = {};
+
+    if (jobId) query.jobId = jobId;
+    if (status) query.status = status;
+    if (triggerSource) query.triggerSource = triggerSource;
+
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 50;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [executions, total] = await Promise.all([
+      Execution.find(query)
+        .select('-responseBody -responseHeaders') // exclude heavy body for list view
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Execution.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      data: executions,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/executions/:id
+router.get('/:id', authenticateToken, async (req, res, next) => {
+  try {
+    const execution = await Execution.findById(req.params.id);
+    if (!execution) {
+      return res.status(404).json({ success: false, error: 'Execution record not found' });
+    }
+    res.json({ success: true, data: execution });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/executions/:id/retry
+router.post('/:id/retry', authenticateToken, async (req, res, next) => {
+  try {
+    const execution = await Execution.findById(req.params.id);
+    if (!execution) {
+      return res.status(404).json({ success: false, error: 'Execution record not found' });
+    }
+
+    const job = await Job.findById(execution.jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Parent job was not found' });
+    }
+
+    execution.logs.push({
+      timestamp: new Date(),
+      level: 'INFO',
+      message: `Manual retry initiated by user ${req.user.username}`,
+    });
+
+    const updated = await performExecution(job, execution);
+
+    await logAuditEvent({
+      userId: req.user._id,
+      username: req.user.username,
+      action: 'EXECUTION_MANUAL_RETRY',
+      targetType: 'execution',
+      targetId: execution._id,
+      ip: req.ip,
+    });
+
+    res.json({
+      success: true,
+      data: updated,
+      message: `Retry completed with status: ${updated.status}`,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/executions/purge
+router.delete('/purge', authenticateToken, async (req, res, next) => {
+  try {
+    const { days = 30 } = req.query;
+    const thresholdDate = new Date(Date.now() - (parseInt(days, 10) * 86400000));
+
+    const result = await Execution.deleteMany({
+      createdAt: { $lt: thresholdDate },
+      status: { $in: ['completed', 'failed'] },
+    });
+
+    await logAuditEvent({
+      userId: req.user._id,
+      username: req.user.username,
+      action: 'EXECUTIONS_PURGE',
+      targetType: 'execution',
+      details: { deletedCount: result.deletedCount, olderThanDays: days },
+      ip: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: `Purged ${result.deletedCount} executions older than ${days} days.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
