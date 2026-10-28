@@ -52,6 +52,11 @@ const envSchema = z.object({
   DEFAULT_EXECUTION_TIMEOUT_MS: z.string().transform(v => parseInt(v, 10)).default('60000'),
   STUCK_JOB_TIMEOUT_MS: z.string().transform(v => parseInt(v, 10)).default('300000'),
 
+  // Keep-Alive Self-Pinger
+  SELF_PINGER_ENABLED: z.string().transform(v => v !== 'false').default('true'),
+  SELF_PINGER_INTERVAL_MS: z.string().transform(v => parseInt(v, 10)).default('600000'),
+  SELF_PINGER_TARGET_URL: z.string().optional().default(''),
+
   // Security
   ALLOWED_DOMAINS: z.string().optional().default(''),
   ALLOW_PRIVATE_NETWORK_TARGETS: z.string().transform(v => v === 'true').default('false'),

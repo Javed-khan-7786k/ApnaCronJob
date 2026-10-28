@@ -4,6 +4,7 @@ import app from '../src/app.js';
 import { isChatAuthorized } from '../src/services/telegramService.js';
 import { executeHttpRequest } from '../src/services/httpExecutor.js';
 import { buildCronExpression, calculateNextRunAt } from '../src/utils/cronHelper.js';
+import { getSelfPingerStatus, updateSelfPingerConfig } from '../src/services/selfPingerService.js';
 import { INSECURE_SECRET_BLACKLIST } from '../src/config/env.js';
 
 describe('Top 10 Bug & Security Fixes Verification', () => {
@@ -25,6 +26,20 @@ describe('Top 10 Bug & Security Fixes Verification', () => {
       const res = await request(app).post('/api/system/self-pinger/ping-now');
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
+    });
+
+    it('getSelfPingerStatus reports active status and config properties', () => {
+      const status = getSelfPingerStatus();
+      expect(typeof status.enabled).toBe('boolean');
+      expect(status.intervalMs).toBeGreaterThanOrEqual(30000);
+      expect(typeof status.totalPings).toBe('number');
+      expect(typeof status.activeUrl).toBe('string');
+    });
+
+    it('updateSelfPingerConfig modifies interval and state safely', () => {
+      const updated = updateSelfPingerConfig({ enabled: true, intervalMs: 120000 });
+      expect(updated.enabled).toBe(true);
+      expect(updated.intervalMs).toBe(120000);
     });
   });
 

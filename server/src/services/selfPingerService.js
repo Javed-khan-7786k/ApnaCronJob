@@ -7,9 +7,9 @@ let pingerIntervalTimer = null;
 let pingerInitialTimer = null;
 
 const pingerState = {
-  enabled: process.env.SELF_PINGER_ENABLED !== 'false',
-  intervalMs: parseInt(process.env.SELF_PINGER_INTERVAL_MS || '600000', 10), // default 10 minutes
-  targetUrl: process.env.SELF_PINGER_TARGET_URL || '',
+  enabled: env.SELF_PINGER_ENABLED ?? (process.env.SELF_PINGER_ENABLED !== 'false'),
+  intervalMs: env.SELF_PINGER_INTERVAL_MS ?? parseInt(process.env.SELF_PINGER_INTERVAL_MS || '600000', 10), // default 10 minutes
+  targetUrl: env.SELF_PINGER_TARGET_URL || process.env.SELF_PINGER_TARGET_URL || '',
   totalPings: 0,
   successCount: 0,
   failCount: 0,
