@@ -127,9 +127,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setState("signed-out");
           }
         }
-      } catch {
-        // Backend offline or unreachable
-        if (mounted && !localUser) {
+      } catch (err: any) {
+        // If 401 Unauthorized or token invalid, clear session immediately
+        const msg = String(err?.message || "").toLowerCase();
+        if (
+          msg.includes("401") ||
+          msg.includes("unauthorized") ||
+          msg.includes("invalid or expired") ||
+          msg.includes("token")
+        ) {
+          setAuthToken(null);
+          try {
+            window.localStorage.removeItem(SESSION_STORAGE_KEY);
+          } catch {}
+          if (mounted) {
+            setUser(null);
+            setState("signed-out");
+          }
+        } else if (mounted && !localUser) {
           setState("signed-out");
         }
       }
@@ -239,6 +254,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAuthToken(null);
           try {
             window.localStorage.removeItem(SESSION_STORAGE_KEY);
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < window.localStorage.length; i++) {
+              const k = window.localStorage.key(i);
+              if (k && (k.startsWith("aapnacronjob_") || k.startsWith("apnacronjob_"))) {
+                keysToRemove.push(k);
+              }
+            }
+            keysToRemove.forEach((k) => window.localStorage.removeItem(k));
           } catch {
             // ignore
           }

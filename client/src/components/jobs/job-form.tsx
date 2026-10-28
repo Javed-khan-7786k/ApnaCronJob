@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { DataStore } from "@/lib/data-store";
+import { apiClient } from "@/lib/api-client";
 import {
   Clock,
   Globe,
@@ -35,13 +36,13 @@ export function JobForm({ initialJob, isEditing = false, onSave }: JobFormProps)
 
   const [name, setName] = useState(initialJob?.name || "");
   const [description, setDescription] = useState(initialJob?.description || "");
-  const [url, setUrl] = useState(initialJob?.url || "https://api.acme.dev/sync");
-  const [method, setMethod] = useState<HttpMethod>(initialJob?.method || "POST");
+  const [url, setUrl] = useState(initialJob?.url || "");
+  const [method, setMethod] = useState<HttpMethod>(initialJob?.method || "GET");
   const [cron, setCron] = useState(initialJob?.cron || "0 2 * * *");
   const [timezone, setTimezone] = useState(initialJob?.timezone || "Asia/Kolkata");
   const [enabled, setEnabled] = useState(initialJob?.enabled ?? true);
   const [timeoutSeconds, setTimeoutSeconds] = useState(initialJob?.timeoutSeconds || 60);
-  const [maxRetries, setMaxRetries] = useState(initialJob?.maxRetries || 3);
+  const [maxRetries, setMaxRetries] = useState(initialJob?.maxRetries ?? 3);
   const [retryBackoff, setRetryBackoff] = useState<"fixed" | "exponential">(
     initialJob?.retryBackoff || "exponential",
   );
@@ -50,9 +51,7 @@ export function JobForm({ initialJob, isEditing = false, onSave }: JobFormProps)
   const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>(
     initialJob?.headers || [{ key: "Content-Type", value: "application/json" }],
   );
-  const [body, setBody] = useState(
-    initialJob?.body || '{\n  "action": "trigger_sync",\n  "batch_size": 500\n}',
-  );
+  const [body, setBody] = useState(initialJob?.body || "");
   const [notifyEmail, setNotifyEmail] = useState(initialJob?.notifyEmail ?? true);
   const [notifyWebhook, setNotifyWebhook] = useState(initialJob?.notifyWebhook ?? false);
 
@@ -78,17 +77,38 @@ export function JobForm({ initialJob, isEditing = false, onSave }: JobFormProps)
       return;
     }
     setTesting(true);
-    const start = performance.now();
     try {
-      new URL(url);
-      await fetch(url, {
-        method: "HEAD",
-        mode: "no-cors",
-      }).catch(() => null);
-      const latency = Math.round(performance.now() - start);
-      toast.success(`Endpoint test: ${method} ${url} responded (${latency}ms)`);
+      const headerObj = headers.reduce(
+        (acc, h) => {
+          if (h.key && h.key.trim()) acc[h.key.trim()] = h.value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
+      const res = await apiClient.jobs.testRequest({
+        url: url.trim(),
+        method,
+        headers: headerObj,
+        body: body || undefined,
+      });
+
+      const probeResult = (res as any)?.result || (res as any)?.data;
+      if (res && res.success && probeResult) {
+        if (probeResult.success) {
+          toast.success(
+            `Endpoint probe: HTTP ${probeResult.statusCode} (${probeResult.durationMs}ms)`,
+          );
+        } else {
+          toast.error(
+            `Probe returned ${probeResult.statusCode || "failure"}: ${probeResult.error || "Non-2xx status code"}`,
+          );
+        }
+      } else {
+        toast.error(`Endpoint probe failed: ${res?.error || "Connection error"}`);
+      }
     } catch (err: any) {
-      toast.error(`Endpoint probe notice: ${err.message || "Failed to reach host"}`);
+      toast.error(`Endpoint probe error: ${err.message || "Failed to reach host"}`);
     } finally {
       setTesting(false);
     }

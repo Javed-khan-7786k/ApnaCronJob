@@ -1,7 +1,7 @@
 import express from 'express';
 import Execution from '../models/Execution.js';
 import Job from '../models/Job.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireEditorOrAdmin } from '../middleware/auth.js';
 import { performExecution } from '../services/schedulerService.js';
 import { logAuditEvent } from '../services/auditService.js';
 
@@ -35,8 +35,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
     if (status) query.status = status;
     if (triggerSource) query.triggerSource = triggerSource;
 
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 50;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
     const skip = (pageNum - 1) * limitNum;
 
     const [executions, total] = await Promise.all([
@@ -85,7 +85,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // POST /api/executions/:id/retry
-router.post('/:id/retry', authenticateToken, async (req, res, next) => {
+router.post('/:id/retry', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const existing = await Execution.findById(req.params.id);
     if (!existing) {
@@ -155,10 +155,18 @@ router.post('/:id/retry', authenticateToken, async (req, res, next) => {
 });
 
 // DELETE /api/executions/purge
-router.delete('/purge', authenticateToken, async (req, res, next) => {
+router.delete('/purge', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const { days = 30 } = req.query;
-    const thresholdDate = new Date(Date.now() - (parseInt(days, 10) * 86400000));
+    const parsedDays = parseInt(days, 10);
+    if (isNaN(parsedDays) || parsedDays < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Query parameter "days" must be a positive integer greater than or equal to 1.',
+      });
+    }
+
+    const thresholdDate = new Date(Date.now() - (parsedDays * 86400000));
     const deleteQuery = {
       createdAt: { $lt: thresholdDate },
       status: { $in: ['completed', 'failed'] },
@@ -176,13 +184,13 @@ router.delete('/purge', authenticateToken, async (req, res, next) => {
       username: req.user.username,
       action: 'EXECUTIONS_PURGE',
       targetType: 'execution',
-      details: { deletedCount: result.deletedCount, olderThanDays: days },
+      details: { deletedCount: result.deletedCount, olderThanDays: parsedDays },
       ip: req.ip,
     });
 
     res.json({
       success: true,
-      message: `Purged ${result.deletedCount} executions older than ${days} days.`,
+      message: `Purged ${result.deletedCount} executions older than ${parsedDays} days.`,
     });
   } catch (err) {
     next(err);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import mongoose from 'mongoose';
 import env from '../config/env.js';
 import logger from '../config/logger.js';
 import Job from '../models/Job.js';
@@ -7,6 +8,14 @@ import { calculateNextRunAt } from '../utils/cronHelper.js';
 
 let pollingInterval = null;
 let lastUpdateId = 0;
+
+export function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 /**
  * Checks if a Telegram Chat ID is authorized
@@ -83,12 +92,12 @@ export async function notifyAdmins(text) {
  */
 export async function dispatchExecutionNotification(job, execution, eventType) {
   const settings = job.notificationSettings || {};
-  const targetChatId = settings.telegramChatId || env.TELEGRAM_ALLOWED_CHAT_IDS?.split(',')[0];
+  const targetChatId = settings.telegramChatId;
 
   if (!targetChatId) return;
 
-  const jobName = job.name || 'Unnamed Job';
-  const url = job.targetUrl;
+  const jobName = escapeHtml(job.name || 'Unnamed Job');
+  const url = escapeHtml(job.targetUrl || '');
   const status = execution.responseStatus || 'N/A';
   const duration = execution.durationMs ? `${execution.durationMs}ms` : '0ms';
   const attempts = `${execution.attemptCount}/${execution.maxAttempts}`;
@@ -109,7 +118,7 @@ export async function dispatchExecutionNotification(job, execution, eventType) {
   }
 
   const errorLine = execution.errorDetails?.message
-    ? `\n❌ <b>Error:</b> <code>${execution.errorDetails.message.replace(/[<>]/g, '')}</code>`
+    ? `\n❌ <b>Error:</b> <code>${escapeHtml(execution.errorDetails.message)}</code>`
     : '';
 
   const msg = `${title}
@@ -214,19 +223,23 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
         await sendTelegramMessage(chatId, '⚠️ Please provide Job ID. Usage: <code>/run &lt;JOB_ID&gt;</code>');
         return;
       }
+      if (!mongoose.Types.ObjectId.isValid(arg)) {
+        await sendTelegramMessage(chatId, `❌ Invalid Job ID format: <code>${escapeHtml(arg)}</code>`);
+        return;
+      }
       try {
         const job = await Job.findById(arg);
         if (!job) {
-          await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${arg}</code>`);
+          await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${escapeHtml(arg)}</code>`);
           return;
         }
-        await sendTelegramMessage(chatId, `🚀 Initiating manual execution for <b>${job.name}</b>...`);
+        await sendTelegramMessage(chatId, `🚀 Initiating manual execution for <b>${escapeHtml(job.name)}</b>...`);
         if (runJobNowCallback) {
           await runJobNowCallback(job, 'telegram');
         }
-        await sendTelegramMessage(chatId, `✅ Manual run completed for <b>${job.name}</b>.`);
+        await sendTelegramMessage(chatId, `✅ Manual run completed for <b>${escapeHtml(job.name)}</b>.`);
       } catch (err) {
-        await sendTelegramMessage(chatId, `❌ Failed to execute job: ${err.message}`);
+        await sendTelegramMessage(chatId, `❌ Failed to execute job: ${escapeHtml(err.message)}`);
       }
       break;
     }
@@ -236,11 +249,19 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
         await sendTelegramMessage(chatId, '⚠️ Please provide Job ID. Usage: <code>/pause &lt;JOB_ID&gt;</code>');
         return;
       }
-      const job = await Job.findByIdAndUpdate(arg, { enabled: false }, { new: true });
-      if (!job) {
-        await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${arg}</code>`);
-      } else {
-        await sendTelegramMessage(chatId, `⏸️ Job <b>${job.name}</b> has been paused.`);
+      if (!mongoose.Types.ObjectId.isValid(arg)) {
+        await sendTelegramMessage(chatId, `❌ Invalid Job ID format: <code>${escapeHtml(arg)}</code>`);
+        return;
+      }
+      try {
+        const job = await Job.findByIdAndUpdate(arg, { enabled: false, status: 'paused' }, { new: true });
+        if (!job) {
+          await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${escapeHtml(arg)}</code>`);
+        } else {
+          await sendTelegramMessage(chatId, `⏸️ Job <b>${escapeHtml(job.name)}</b> has been paused.`);
+        }
+      } catch (err) {
+        await sendTelegramMessage(chatId, `❌ Failed to pause job: ${escapeHtml(err.message)}`);
       }
       break;
     }
@@ -250,16 +271,25 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
         await sendTelegramMessage(chatId, '⚠️ Please provide Job ID. Usage: <code>/resume &lt;JOB_ID&gt;</code>');
         return;
       }
-      const job = await Job.findById(arg);
-      if (!job) {
-        await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${arg}</code>`);
+      if (!mongoose.Types.ObjectId.isValid(arg)) {
+        await sendTelegramMessage(chatId, `❌ Invalid Job ID format: <code>${escapeHtml(arg)}</code>`);
         return;
       }
-      const nextRun = calculateNextRunAt(job);
-      job.enabled = true;
-      job.nextRunAt = nextRun;
-      await job.save();
-      await sendTelegramMessage(chatId, `▶️ Job <b>${job.name}</b> resumed. Next run: <code>${nextRun ? new Date(nextRun).toISOString() : 'N/A'}</code>`);
+      try {
+        const job = await Job.findById(arg);
+        if (!job) {
+          await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${escapeHtml(arg)}</code>`);
+          return;
+        }
+        const nextRun = calculateNextRunAt(job);
+        job.enabled = true;
+        job.status = 'active';
+        job.nextRunAt = nextRun;
+        await job.save();
+        await sendTelegramMessage(chatId, `▶️ Job <b>${escapeHtml(job.name)}</b> resumed. Next run: <code>${nextRun ? new Date(nextRun).toISOString() : 'N/A'}</code>`);
+      } catch (err) {
+        await sendTelegramMessage(chatId, `❌ Failed to resume job: ${escapeHtml(err.message)}`);
+      }
       break;
     }
 

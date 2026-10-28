@@ -20,24 +20,39 @@ export function isValidTimezone(tz) {
  */
 export function buildCronExpression(schedule) {
   const { type, time = '00:00', daysOfWeek = [], daysOfMonth = [], customCron } = schedule;
-  const [hour = '0', minute = '0'] = (time || '00:00').split(':');
+  const parts = (time || '00:00').split(':');
+  const hour = parseInt(parts[0] || '0', 10);
+  const minute = parseInt(parts[1] || '0', 10);
+
+  if (isNaN(hour) || hour < 0 || hour > 23 || isNaN(minute) || minute < 0 || minute > 59) {
+    throw new Error(`Invalid schedule time "${time}". Hours must be 0-23 and minutes 0-59.`);
+  }
 
   switch (type) {
     case 'once':
       return null;
     case 'daily':
-      return `${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`;
+      return `${minute} ${hour} * * *`;
     case 'weekly': {
       // daysOfWeek array: [0..6] (0 = Sunday, 1 = Monday, etc.)
-      const days = Array.isArray(daysOfWeek) && daysOfWeek.length > 0 ? daysOfWeek.join(',') : '*';
-      return `${parseInt(minute, 10)} ${parseInt(hour, 10)} * * ${days}`;
+      const validDays = Array.isArray(daysOfWeek)
+        ? daysOfWeek.map(d => parseInt(d, 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6)
+        : [];
+      const days = validDays.length > 0 ? validDays.join(',') : '*';
+      return `${minute} ${hour} * * ${days}`;
     }
     case 'monthly': {
-      const dates = Array.isArray(daysOfMonth) && daysOfMonth.length > 0 ? daysOfMonth.join(',') : '1';
-      return `${parseInt(minute, 10)} ${parseInt(hour, 10)} ${dates} * *`;
+      const validDates = Array.isArray(daysOfMonth)
+        ? daysOfMonth.map(d => parseInt(d, 10)).filter(d => !isNaN(d) && d >= 1 && d <= 31)
+        : [];
+      const dates = validDates.length > 0 ? validDates.join(',') : '1';
+      return `${minute} ${hour} ${dates} * *`;
     }
     case 'custom':
-      return customCron ? customCron.trim() : '* * * * *';
+      if (!customCron || !customCron.trim()) {
+        throw new Error('Custom schedule requires a non-empty cron expression.');
+      }
+      return customCron.trim();
     default:
       throw new Error(`Unsupported schedule type: "${type}"`);
   }

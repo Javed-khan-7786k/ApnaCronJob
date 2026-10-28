@@ -121,12 +121,19 @@ export async function executeHttpRequest({
     ...headers,
   };
 
-  // Convert body to JSON string if object
+  // Convert body to JSON string if object, or ensure application/json if JSON string
   let dataPayload = body;
   if (body && typeof body === 'object') {
     dataPayload = JSON.stringify(body);
     if (!requestHeaders['Content-Type'] && !requestHeaders['content-type']) {
       requestHeaders['Content-Type'] = 'application/json';
+    }
+  } else if (typeof body === 'string' && body.trim()) {
+    const trimmed = body.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      if (!requestHeaders['Content-Type'] && !requestHeaders['content-type']) {
+        requestHeaders['Content-Type'] = 'application/json';
+      }
     }
   }
 
@@ -208,11 +215,14 @@ export async function executeHttpRequest({
     const retryAfter = parseRetryAfterHeader(response.headers);
 
     // Validate Status Code
-    const isStatusExpected = expectedStatusCodes.includes(statusCode);
+    const validExpectedCodes = (Array.isArray(expectedStatusCodes) && expectedStatusCodes.length > 0)
+      ? expectedStatusCodes
+      : [200, 201, 202, 203, 204, 205, 206, 207, 208, 226];
+    const isStatusExpected = validExpectedCodes.includes(statusCode);
     let validationError = null;
 
     if (!isStatusExpected) {
-      validationError = `Unexpected HTTP Status: ${statusCode} (Expected: ${expectedStatusCodes.join(', ')})`;
+      validationError = `Unexpected HTTP Status: ${statusCode} (Expected: ${validExpectedCodes.join(', ')})`;
     } else if (responseValidation?.containsText && responseValidation.containsText.trim().length > 0) {
       const matchText = responseValidation.containsText.trim();
       if (!sanitized.includes(matchText)) {

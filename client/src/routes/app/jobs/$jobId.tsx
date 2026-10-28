@@ -40,7 +40,7 @@ export function JobDetailPage() {
   const { jobId } = useParams({ from: "/app/jobs/$jobId" });
 
   const [job, setJob] = useState(() => {
-    return DataStore.getJob(jobId) || DataStore.getJobs()[0];
+    return DataStore.getJob(jobId);
   });
   const [executions, setExecutions] = useState(() => DataStore.getExecutions());
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "schedule">("overview");
@@ -55,9 +55,13 @@ export function JobDetailPage() {
         if (res.success && res.data) {
           const normalized = normalizeBackendJob(res.data);
           setJob(normalized);
+        } else if (!local) {
+          setJob(undefined);
         }
       } catch {
-        // use local
+        if (!local) {
+          setJob(undefined);
+        }
       }
       setExecutions(DataStore.getExecutions());
     }

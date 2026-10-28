@@ -5,55 +5,34 @@ import { logAuditEvent } from '../services/auditService.js';
 
 const router = express.Router();
 
-const INITIAL_TEAM = [
-  {
-    name: 'Alex Rivera',
-    email: 'alex@acme.dev',
-    role: 'Owner',
-    status: 'Active',
-    initials: 'AR',
-  },
-  {
-    name: 'Priya Sharma',
-    email: 'priya@acme.dev',
-    role: 'Admin',
-    status: 'Active',
-    initials: 'PS',
-  },
-  {
-    name: 'Marcus Chen',
-    email: 'marcus@acme.dev',
-    role: 'Editor',
-    status: 'Active',
-    initials: 'MC',
-  },
-];
-
 // GET /api/team
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
     const query = req.user && req.user.role !== 'admin' ? { invitedBy: req.user._id } : {};
-    let members = await TeamMember.find(query).sort({ createdAt: 1 });
-
-    if (members.length === 0) {
-      members = await TeamMember.create(
-        INITIAL_TEAM.map(m => ({ ...m, invitedBy: req.user._id }))
-      );
-    }
-
+    const members = await TeamMember.find(query).sort({ createdAt: 1 });
     res.json({ success: true, data: members });
   } catch (err) {
     next(err);
   }
 });
 
+const VALID_ROLES = ['Owner', 'Admin', 'Editor', 'Viewer'];
+
 // POST /api/team/invite
 router.post('/invite', authenticateToken, async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'viewer') {
+      return res.status(403).json({ success: false, error: 'Forbidden: Viewer cannot invite team members.' });
+    }
+
     const { name, email, role = 'Editor' } = req.body;
 
     if (!name || !email) {
       return res.status(400).json({ success: false, error: 'Name and email are required.' });
+    }
+
+    if (!VALID_ROLES.includes(role)) {
+      return res.status(400).json({ success: false, error: `Invalid role. Allowed roles: ${VALID_ROLES.join(', ')}` });
     }
 
     const initials = name
@@ -91,6 +70,10 @@ router.post('/invite', authenticateToken, async (req, res, next) => {
 // DELETE /api/team/:id
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'viewer') {
+      return res.status(403).json({ success: false, error: 'Forbidden: Viewer cannot remove team members.' });
+    }
+
     const filter = { _id: req.params.id };
     if (req.user && req.user.role !== 'admin') {
       filter.invitedBy = req.user._id;
@@ -119,11 +102,24 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
 // PUT /api/team/:id/role
 router.put('/:id/role', authenticateToken, async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'viewer') {
+      return res.status(403).json({ success: false, error: 'Forbidden: Viewer cannot change member roles.' });
+    }
+
     const { role } = req.body;
-    const member = await TeamMember.findByIdAndUpdate(
-      req.params.id,
+    if (!role || !VALID_ROLES.includes(role)) {
+      return res.status(400).json({ success: false, error: `Invalid role. Allowed roles: ${VALID_ROLES.join(', ')}` });
+    }
+
+    const filter = { _id: req.params.id };
+    if (req.user && req.user.role !== 'admin') {
+      filter.invitedBy = req.user._id;
+    }
+
+    const member = await TeamMember.findOneAndUpdate(
+      filter,
       { role },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!member) {
       return res.status(404).json({ success: false, error: 'Team member not found' });

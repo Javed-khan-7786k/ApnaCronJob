@@ -28,7 +28,7 @@ export async function acquireDistributedLock(lockName = 'scheduler_tick', ttlMs 
         lockName,
         $or: [
           { expiresAt: { $lt: now } },
-          { lockedBy: WORKER_ID }
+          { expiresAt: null },
         ]
       },
       {
@@ -38,7 +38,7 @@ export async function acquireDistributedLock(lockName = 'scheduler_tick', ttlMs 
           expiresAt,
         }
       },
-      { upsert: true, new: true, rawResult: true }
+      { upsert: true, new: true }
     );
     return !!lock;
   } catch (err) {
@@ -71,19 +71,21 @@ export async function recoverStuckExecutions() {
   const stuckThreshold = new Date(now.getTime() - env.STUCK_JOB_TIMEOUT_MS);
 
   try {
-    const stuckList = await Execution.find({
+    // 1. Recover running executions whose worker lease expired
+    const stuckRunning = await Execution.find({
       status: 'running',
       lockedUntil: { $lt: now, $ne: null }
     }).limit(10);
 
-    for (const exec of stuckList) {
-      logger.warn(`Recovering stuck execution ${exec.occurrenceId} from abandoned worker ${exec.workerId}`);
+    for (const exec of stuckRunning) {
+      logger.warn(`Recovering stuck running execution ${exec.occurrenceId} from abandoned worker ${exec.workerId}`);
       exec.status = 'failed';
       exec.errorDetails = {
         message: 'Worker lease expired before completion. Process restart or timeout detected.',
         code: 'WORKER_TIMEOUT_OR_CRASH',
       };
       exec.completedAt = now;
+      exec.lockedUntil = null;
       exec.logs.push({
         timestamp: now,
         level: 'WARN',
@@ -92,6 +94,31 @@ export async function recoverStuckExecutions() {
       await exec.save();
 
       // Update parent job status
+      await Job.findByIdAndUpdate(exec.jobId, { lastStatus: 'failure' });
+    }
+
+    // 2. Recover abandoned pending executions that were never picked up
+    const stuckPending = await Execution.find({
+      status: 'pending',
+      createdAt: { $lt: stuckThreshold }
+    }).limit(10);
+
+    for (const exec of stuckPending) {
+      logger.warn(`Recovering abandoned pending execution ${exec.occurrenceId}`);
+      exec.status = 'failed';
+      exec.errorDetails = {
+        message: 'Execution remained pending beyond maximum threshold without worker pickup.',
+        code: 'PENDING_TIMEOUT',
+      };
+      exec.completedAt = now;
+      exec.lockedUntil = null;
+      exec.logs.push({
+        timestamp: now,
+        level: 'WARN',
+        message: 'Abandoned pending execution recovered by Stuck Execution Monitor.',
+      });
+      await exec.save();
+
       await Job.findByIdAndUpdate(exec.jobId, { lastStatus: 'failure' });
     }
   } catch (err) {
@@ -108,121 +135,147 @@ export async function performExecution(job, execution) {
   const now = new Date();
   const leaseMs = (job.timeoutMs || env.DEFAULT_EXECUTION_TIMEOUT_MS) + 15000;
 
-  execution.status = 'running';
-  execution.startedAt = now;
-  execution.workerId = WORKER_ID;
-  execution.lockedUntil = new Date(now.getTime() + leaseMs);
-  execution.attemptCount += 1;
-  execution.logs.push({
-    timestamp: now,
-    level: 'INFO',
-    message: `Attempt ${execution.attemptCount}/${execution.maxAttempts} started by worker ${WORKER_ID}`,
-  });
-  await execution.save();
-
-  // Convert headers map to plain object
-  const headerObj = job.headers instanceof Map
-    ? Object.fromEntries(job.headers)
-    : (job.headers || {});
-
-  const result = await executeHttpRequest({
-    url: job.targetUrl,
-    method: job.httpMethod,
-    headers: headerObj,
-    body: job.body,
-    timeoutMs: job.timeoutMs || env.DEFAULT_EXECUTION_TIMEOUT_MS,
-    expectedStatusCodes: job.expectedStatusCodes,
-    responseValidation: job.responseValidation,
-    retryPolicy: job.retryPolicy,
-  });
-
-  const finishTime = new Date();
-  execution.completedAt = finishTime;
-  execution.durationMs = result.durationMs;
-  execution.responseStatus = result.statusCode;
-  execution.responseHeaders = result.headers;
-  execution.responseBody = result.body;
-  execution.responseTruncated = result.truncated;
-  execution.lockedUntil = null; // release lease
-
-  if (result.success) {
-    execution.status = 'completed';
-    execution.nextRetryAt = null;
+  try {
+    execution.status = 'running';
+    execution.startedAt = now;
+    execution.workerId = WORKER_ID;
+    execution.lockedUntil = new Date(now.getTime() + leaseMs);
+    execution.attemptCount += 1;
     execution.logs.push({
-      timestamp: finishTime,
+      timestamp: now,
       level: 'INFO',
-      message: `Execution completed successfully with HTTP ${result.statusCode} in ${result.durationMs}ms`,
+      message: `Attempt ${execution.attemptCount}/${execution.maxAttempts} started by worker ${WORKER_ID}`,
     });
     await execution.save();
 
-    await Job.findByIdAndUpdate(job._id, {
-      lastRunAt: finishTime,
-      lastStatus: 'success',
-      lastHttpStatus: result.statusCode,
-      lastDurationMs: result.durationMs,
-      status: job.enabled ? 'active' : 'paused',
-      $inc: { successCount: 1 },
+    // Convert headers map to plain object
+    const headerObj = job.headers instanceof Map
+      ? Object.fromEntries(job.headers)
+      : (job.headers || {});
+
+    const result = await executeHttpRequest({
+      url: job.targetUrl,
+      method: job.httpMethod,
+      headers: headerObj,
+      body: job.body,
+      timeoutMs: job.timeoutMs || env.DEFAULT_EXECUTION_TIMEOUT_MS,
+      expectedStatusCodes: job.expectedStatusCodes,
+      responseValidation: job.responseValidation,
+      retryPolicy: job.retryPolicy,
     });
 
-    await dispatchExecutionNotification(job, execution, 'success');
-  } else {
-    // Failure occurred
-    execution.errorDetails = {
-      message: result.error || 'Request failed without specific error message',
-      code: String(result.statusCode || 'NETWORK_FAILURE'),
-    };
+    const finishTime = new Date();
+    execution.completedAt = finishTime;
+    execution.durationMs = result.durationMs;
+    execution.responseStatus = result.statusCode;
+    execution.responseHeaders = result.headers;
+    execution.responseBody = result.body;
+    execution.responseTruncated = result.truncated;
+    execution.lockedUntil = null; // release lease
 
-    const eligibleForRetry = shouldRetry(
-      execution.attemptCount,
-      execution.maxAttempts,
-      result.isRetryable
-    );
-
-    if (eligibleForRetry) {
-      const delayMs = calculateRetryDelay(execution.attemptCount, job.retryPolicy, result.retryAfterSec);
-      const nextRetry = new Date(finishTime.getTime() + delayMs);
-
-      execution.status = 'retrying';
-      execution.nextRetryAt = nextRetry;
-      execution.logs.push({
-        timestamp: finishTime,
-        level: 'WARN',
-        message: `Attempt ${execution.attemptCount} failed: ${result.error}. Next retry scheduled for ${nextRetry.toISOString()} (+${Math.round(delayMs / 1000)}s)`,
-      });
-      await execution.save();
-
-      await Job.findByIdAndUpdate(job._id, {
-        lastRunAt: finishTime,
-        lastStatus: 'retrying',
-        lastHttpStatus: result.statusCode || null,
-        lastDurationMs: result.durationMs,
-        status: job.enabled ? 'retrying' : 'paused',
-      });
-
-      await dispatchExecutionNotification(job, execution, 'retry');
-    } else {
-      // Final Failure
-      execution.status = 'failed';
+    if (result.success) {
+      execution.status = 'completed';
       execution.nextRetryAt = null;
       execution.logs.push({
         timestamp: finishTime,
-        level: 'ERROR',
-        message: `Execution definitively failed after attempt ${execution.attemptCount}: ${result.error}`,
+        level: 'INFO',
+        message: `Execution completed successfully with HTTP ${result.statusCode} in ${result.durationMs}ms`,
       });
       await execution.save();
 
       await Job.findByIdAndUpdate(job._id, {
         lastRunAt: finishTime,
-        lastStatus: 'failure',
-        lastHttpStatus: result.statusCode || null,
+        lastStatus: 'success',
+        lastHttpStatus: result.statusCode,
         lastDurationMs: result.durationMs,
-        status: job.enabled ? 'failed' : 'paused',
-        $inc: { failureCount: 1 },
+        status: job.enabled ? 'active' : 'paused',
+        $inc: { successCount: 1 },
       });
 
-      const isExhausted = execution.attemptCount >= execution.maxAttempts;
-      await dispatchExecutionNotification(job, execution, isExhausted ? 'exhausted' : 'failure');
+      try {
+        await dispatchExecutionNotification(job, execution, 'success');
+      } catch (notifErr) {
+        logger.warn('Failed to dispatch execution success notification', { error: notifErr.message });
+      }
+    } else {
+      // Failure occurred
+      execution.errorDetails = {
+        message: result.error || 'Request failed without specific error message',
+        code: String(result.statusCode || 'NETWORK_FAILURE'),
+      };
+
+      const eligibleForRetry = shouldRetry(
+        execution.attemptCount,
+        execution.maxAttempts,
+        result.isRetryable
+      );
+
+      if (eligibleForRetry) {
+        const delayMs = calculateRetryDelay(execution.attemptCount, job.retryPolicy, result.retryAfterSec);
+        const nextRetry = new Date(finishTime.getTime() + delayMs);
+
+        execution.status = 'retrying';
+        execution.nextRetryAt = nextRetry;
+        execution.logs.push({
+          timestamp: finishTime,
+          level: 'WARN',
+          message: `Attempt ${execution.attemptCount} failed: ${result.error}. Next retry scheduled for ${nextRetry.toISOString()} (+${Math.round(delayMs / 1000)}s)`,
+        });
+        await execution.save();
+
+        await Job.findByIdAndUpdate(job._id, {
+          lastRunAt: finishTime,
+          lastStatus: 'retrying',
+          lastHttpStatus: result.statusCode || null,
+          lastDurationMs: result.durationMs,
+          status: job.enabled ? 'retrying' : 'paused',
+        });
+
+        try {
+          await dispatchExecutionNotification(job, execution, 'retry');
+        } catch (notifErr) {
+          logger.warn('Failed to dispatch execution retry notification', { error: notifErr.message });
+        }
+      } else {
+        // Final Failure
+        execution.status = 'failed';
+        execution.nextRetryAt = null;
+        execution.logs.push({
+          timestamp: finishTime,
+          level: 'ERROR',
+          message: `Execution definitively failed after attempt ${execution.attemptCount}: ${result.error}`,
+        });
+        await execution.save();
+
+        await Job.findByIdAndUpdate(job._id, {
+          lastRunAt: finishTime,
+          lastStatus: 'failure',
+          lastHttpStatus: result.statusCode || null,
+          lastDurationMs: result.durationMs,
+          status: job.enabled ? 'failed' : 'paused',
+          $inc: { failureCount: 1 },
+        });
+
+        const isExhausted = execution.attemptCount >= execution.maxAttempts;
+        try {
+          await dispatchExecutionNotification(job, execution, isExhausted ? 'exhausted' : 'failure');
+        } catch (notifErr) {
+          logger.warn('Failed to dispatch execution failure notification', { error: notifErr.message });
+        }
+      }
     }
+  } catch (err) {
+    logger.error('Unexpected error during performExecution', { error: err.message, executionId: execution._id });
+    execution.status = 'failed';
+    execution.completedAt = new Date();
+    execution.lockedUntil = null;
+    execution.errorDetails = {
+      message: `Fatal execution error: ${err.message}`,
+      code: 'EXECUTION_UNCAUGHT_EXCEPTION',
+    };
+    try {
+      await execution.save();
+    } catch {}
   }
 
   return execution;
@@ -350,7 +403,7 @@ export async function processSchedulerTick(source = 'scheduler') {
           scheduledFor: scheduledMoment,
           status: 'pending',
           triggerSource: source,
-          maxAttempts: job.retryPolicy?.maxAttempts || 10,
+          maxAttempts: typeof job.retryPolicy?.maxAttempts === 'number' ? job.retryPolicy.maxAttempts : 10,
           requestDetails: {
             url: job.targetUrl,
             method: job.httpMethod,
@@ -418,7 +471,7 @@ export async function triggerJobNow(job, source = 'manual') {
     scheduledFor: now,
     status: 'pending',
     triggerSource: source,
-    maxAttempts: job.retryPolicy?.maxAttempts || 10,
+    maxAttempts: typeof job.retryPolicy?.maxAttempts === 'number' ? job.retryPolicy.maxAttempts : 10,
     requestDetails: {
       url: job.targetUrl,
       method: job.httpMethod,
@@ -451,7 +504,11 @@ export function startInProcessScheduler() {
     try {
       const hasLock = await acquireDistributedLock('in_process_tick', env.SCHEDULER_TICK_INTERVAL_MS);
       if (hasLock) {
-        await processSchedulerTick('scheduler');
+        try {
+          await processSchedulerTick('scheduler');
+        } finally {
+          await releaseDistributedLock('in_process_tick');
+        }
       }
     } catch (err) {
       logger.error('In-process tick loop exception', { error: err.message });

@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { z } from 'zod';
 import Job from '../models/Job.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireEditorOrAdmin } from '../middleware/auth.js';
 import { buildCronExpression, calculateNextRunAt, getUpcomingRunsPreview, validateCronExpression, isValidTimezone } from '../utils/cronHelper.js';
 import { validateUrlForSSRF } from '../utils/ssrf.js';
 import { executeHttpRequest } from '../services/httpExecutor.js';
@@ -117,8 +117,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
     if (status) query.lastStatus = status;
     if (enabled !== undefined) query.enabled = enabled === 'true';
 
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 100;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 100));
     const skip = (pageNum - 1) * limitNum;
 
     const [jobs, total] = await Promise.all([
@@ -139,6 +139,26 @@ router.get('/', authenticateToken, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// POST /api/jobs/validate-cron
+router.post('/validate-cron', (req, res) => {
+  const { cron, timezone = 'UTC' } = req.body;
+  if (!cron || typeof cron !== 'string') {
+    return res.status(400).json({ success: false, valid: false, error: 'Cron expression is required and must be a string' });
+  }
+  const check = validateCronExpression(cron);
+  if (!check.valid) {
+    return res.json({ success: true, valid: false, error: check.error || 'Invalid cron expression' });
+  }
+  const nextRun = calculateNextRunAt({ cronExpression: cron, timezone });
+  res.json({
+    success: true,
+    valid: true,
+    nextRunAt: nextRun,
+    cron,
+    timezone,
+  });
 });
 
 // POST /api/jobs/preview-schedule
@@ -181,7 +201,7 @@ router.post('/test-request', authenticateToken, async (req, res) => {
 });
 
 // POST /api/jobs (Create Job)
-router.post('/', authenticateToken, async (req, res, next) => {
+router.post('/', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const data = normalizeJobInput(req.body);
 
@@ -278,7 +298,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // PUT /api/jobs/:id
-router.put('/:id', authenticateToken, async (req, res, next) => {
+router.put('/:id', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const existing = await findJobDoc(req.params.id, req.user);
     if (!existing) {
@@ -411,7 +431,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // DELETE /api/jobs/:id
-router.delete('/:id', authenticateToken, async (req, res, next) => {
+router.delete('/:id', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const existing = await findJobDoc(req.params.id, req.user);
     if (!existing) {
@@ -437,7 +457,7 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // POST /api/jobs/:id/run
-router.post('/:id/run', authenticateToken, async (req, res, next) => {
+router.post('/:id/run', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const job = await findJobDoc(req.params.id, req.user);
     if (!job) {
@@ -477,6 +497,15 @@ const toggleJobHandler = async (req, res, next) => {
     }
 
     const newEnabled = !job.enabled;
+    if (newEnabled && job.scheduleType === 'once') {
+      if (!job.oneTimeRunAt || new Date(job.oneTimeRunAt) <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot enable a one-time job whose scheduled execution time is in the past or not set.',
+        });
+      }
+    }
+
     job.enabled = newEnabled;
     job.status = newEnabled ? 'active' : 'paused';
     job.nextRunAt = newEnabled ? calculateNextRunAt(job) : null;
@@ -498,11 +527,11 @@ const toggleJobHandler = async (req, res, next) => {
 };
 
 // Support both POST and PATCH for toggle
-router.post('/:id/toggle', authenticateToken, toggleJobHandler);
-router.patch('/:id/toggle', authenticateToken, toggleJobHandler);
+router.post('/:id/toggle', authenticateToken, requireEditorOrAdmin, toggleJobHandler);
+router.patch('/:id/toggle', authenticateToken, requireEditorOrAdmin, toggleJobHandler);
 
 // POST /api/jobs/:id/duplicate
-router.post('/:id/duplicate', authenticateToken, async (req, res, next) => {
+router.post('/:id/duplicate', authenticateToken, requireEditorOrAdmin, async (req, res, next) => {
   try {
     const original = await findJobDoc(req.params.id, req.user);
     if (!original) {

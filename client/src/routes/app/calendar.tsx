@@ -68,24 +68,19 @@ export function CalendarPage() {
     );
 
     const matches = jobs
+      .filter((j) => j.enabled && Boolean(j.cron))
       .map((j) => {
-        const runs = getNextRuns(j.cron, { count: 8, fromDate: targetStart }).filter(
-          (r) => r >= targetStart && r <= targetEnd,
-        );
+        const runs = getNextRuns(j.cron, {
+          count: 8,
+          fromDate: targetStart,
+          timeZone: j.timezone || "UTC",
+        }).filter((r) => r >= targetStart && r <= targetEnd);
         return {
           job: j,
           runs,
         };
       })
       .filter((item) => item.runs.length > 0);
-
-    // If no jobs run on this specific day, show next upcoming runs
-    if (matches.length === 0) {
-      return jobs.map((j) => ({
-        job: j,
-        runs: getNextRuns(j.cron, { count: 2, fromDate: targetStart }),
-      }));
-    }
 
     return matches;
   }, [jobs, currentDate, selectedDay]);
@@ -173,51 +168,63 @@ export function CalendarPage() {
               </h2>
             </div>
             <span className="text-xs font-mono text-muted-foreground">
-              {jobs.length} active monitors
+              {jobs.filter((j) => j.enabled).length} active{" "}
+              {jobs.filter((j) => j.enabled).length === 1 ? "monitor" : "monitors"}
             </span>
           </div>
 
-          <div className="space-y-3">
-            {runsForDay.map(({ job, runs }) => (
-              <div
-                key={job.id}
-                className="p-3.5 rounded-lg border border-border/80 bg-paper-sunken/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/app/jobs/$jobId"
-                      params={{ jobId: job.id }}
-                      className="font-bold text-foreground hover:underline"
-                    >
-                      {job.name}
-                    </Link>
-                    <Badge variant="outline" className="text-[10px] uppercase">
-                      {job.method}
-                    </Badge>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground font-sans mt-0.5 block">
-                    {humanizeCron(job.cron)} • {job.url}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <span className="font-semibold text-foreground block">
-                      {runs[0] ? formatInZone(runs[0], "UTC") : "—"}
+          {runsForDay.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border/80 p-8 text-center bg-paper-sunken/20">
+              <CalendarIcon className="mx-auto h-7 w-7 text-muted-foreground/50 mb-2" />
+              <p className="text-sm font-medium text-foreground">No jobs scheduled on this date</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                There are no enabled recurring jobs scheduled to run on {currentMonth} {selectedDay}
+                , {currentYear}.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {runsForDay.map(({ job, runs }) => (
+                <div
+                  key={job.id}
+                  className="p-3.5 rounded-lg border border-border/80 bg-paper-sunken/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/app/jobs/$jobId"
+                        params={{ jobId: job.id }}
+                        className="font-bold text-foreground hover:underline"
+                      >
+                        {job.name}
+                      </Link>
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {job.method}
+                      </Badge>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground font-sans mt-0.5 block">
+                      {humanizeCron(job.cron)} • {job.url}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">UTC Reference</span>
                   </div>
 
-                  <Link to="/app/jobs/$jobId" params={{ jobId: job.id }}>
-                    <Button variant="outline" size="sm" className="h-7 text-xs font-mono">
-                      Inspect
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <span className="font-semibold text-foreground block">
+                        {runs[0] ? formatInZone(runs[0], "UTC") : "—"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">UTC Reference</span>
+                    </div>
+
+                    <Link to="/app/jobs/$jobId" params={{ jobId: job.id }}>
+                      <Button variant="outline" size="sm" className="h-7 text-xs font-mono">
+                        Inspect
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </AppShell>

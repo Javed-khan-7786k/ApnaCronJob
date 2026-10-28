@@ -246,6 +246,7 @@ jobSchema.virtual('method').get(function () {
 });
 
 jobSchema.virtual('cron').get(function () {
+  if (this.scheduleType === 'once') return null;
   return this.cronExpression || this.customCron || '0 0 * * *';
 });
 
@@ -254,7 +255,7 @@ jobSchema.virtual('timeoutSeconds').get(function () {
 });
 
 jobSchema.virtual('maxRetries').get(function () {
-  return this.retryPolicy?.maxAttempts || 10;
+  return typeof this.retryPolicy?.maxAttempts === 'number' ? this.retryPolicy.maxAttempts : 10;
 });
 
 jobSchema.virtual('retryBackoff').get(function () {

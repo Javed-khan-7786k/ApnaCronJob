@@ -9,7 +9,7 @@ const router = express.Router();
 // GET /api/api-keys
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    const keys = await ApiKey.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const keys = await ApiKey.find({ userId: req.user._id }).select('-keyHash').sort({ createdAt: -1 });
     res.json({ success: true, data: keys });
   } catch (err) {
     next(err);
@@ -19,6 +19,10 @@ router.get('/', authenticateToken, async (req, res, next) => {
 // POST /api/api-keys (Generate new API Key)
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'viewer') {
+      return res.status(403).json({ success: false, error: 'Forbidden: Viewer cannot create API keys.' });
+    }
+
     const { label = 'API Worker Key', scopes = ['jobs:read', 'jobs:write', 'runs:dispatch'] } = req.body;
 
     // Generate random secure token
@@ -45,11 +49,14 @@ router.post('/', authenticateToken, async (req, res, next) => {
       ip: req.ip,
     });
 
+    const keyObj = apiKey.toJSON();
+    delete keyObj.keyHash;
+
     // Return the secretKey only ONCE upon creation!
     res.status(201).json({
       success: true,
       data: {
-        ...apiKey.toJSON(),
+        ...keyObj,
         secretKey, // full plaintext key revealed once
       },
     });
@@ -61,6 +68,9 @@ router.post('/', authenticateToken, async (req, res, next) => {
 // DELETE /api/api-keys/:id (Revoke key)
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'viewer') {
+      return res.status(403).json({ success: false, error: 'Forbidden: Viewer cannot revoke API keys.' });
+    }
     const apiKey = await ApiKey.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!apiKey) {
       return res.status(404).json({ success: false, error: 'API key not found' });

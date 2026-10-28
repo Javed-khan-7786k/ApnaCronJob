@@ -74,8 +74,17 @@ export async function authenticateToken(req, res, next) {
         });
       }
       req.user = user;
+    } else if (env.NODE_ENV === 'test' || env.NODE_ENV === 'development') {
+      req.user = {
+        _id: decoded.userId,
+        role: decoded.role || 'viewer',
+        username: decoded.username || 'user',
+      };
     } else {
-      req.user = { _id: decoded.userId, role: decoded.role || 'admin', username: 'admin' };
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is temporarily unavailable. Please retry shortly.',
+      });
     }
 
     next();
@@ -92,6 +101,16 @@ export function requireAdmin(req, res, next) {
     return res.status(403).json({
       success: false,
       error: 'Forbidden. Administrator privileges required.',
+    });
+  }
+  next();
+}
+
+export function requireEditorOrAdmin(req, res, next) {
+  if (req.user && req.user.role === 'viewer') {
+    return res.status(403).json({
+      success: false,
+      error: 'Forbidden. Viewer role does not have permission to perform this modification.',
     });
   }
   next();

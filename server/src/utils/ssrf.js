@@ -21,8 +21,27 @@ const DISALLOWED_RANGES = [
   'broadcast',
   'multicast',
   'reserved',
-  'unspecified'
+  'unspecified',
+  'uniqueLocal',
+  'ipv4Mapped',
+  '6to4',
+  'teredo',
 ];
+
+function isRestrictedIpAddress(addr) {
+  const range = addr.range();
+  if (DISALLOWED_RANGES.includes(range)) {
+    return { restricted: true, range };
+  }
+  if (addr.kind() === 'ipv6' && typeof addr.isIPv4MappedAddress === 'function' && addr.isIPv4MappedAddress()) {
+    const mapped = addr.toIPv4Address();
+    const mappedRange = mapped.range();
+    if (DISALLOWED_RANGES.includes(mappedRange)) {
+      return { restricted: true, range: `ipv4Mapped(${mappedRange})` };
+    }
+  }
+  return { restricted: false, range };
+}
 
 /**
  * Validates a target URL against SSRF and forbidden networks
@@ -76,9 +95,9 @@ export async function validateUrlForSSRF(rawUrl) {
   try {
     if (ipaddr.isValid(hostname)) {
       const addr = ipaddr.parse(hostname);
-      const range = addr.range();
-      if (DISALLOWED_RANGES.includes(range)) {
-        return { safe: false, error: `Direct IP address "${hostname}" is in restricted range (${range}).` };
+      const check = isRestrictedIpAddress(addr);
+      if (check.restricted) {
+        return { safe: false, error: `Direct IP address "${hostname}" is in restricted range (${check.range}).` };
       }
       return { safe: true, parsedUrl: parsed, resolvedIp: hostname };
     }
@@ -97,11 +116,11 @@ export async function validateUrlForSSRF(rawUrl) {
       const resolvedAddress = record.address;
       if (ipaddr.isValid(resolvedAddress)) {
         const addr = ipaddr.parse(resolvedAddress);
-        const range = addr.range();
-        if (DISALLOWED_RANGES.includes(range)) {
+        const check = isRestrictedIpAddress(addr);
+        if (check.restricted) {
           return {
             safe: false,
-            error: `Resolved IP "${resolvedAddress}" for host "${hostname}" belongs to restricted network range (${range}).`
+            error: `Resolved IP "${resolvedAddress}" for host "${hostname}" belongs to restricted network range (${check.range}).`
           };
         }
       }

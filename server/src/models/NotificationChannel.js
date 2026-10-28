@@ -4,7 +4,7 @@ const notificationChannelSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['email', 'webhook', 'slack', 'discord', 'telegram'],
+      enum: ['email', 'webhook', 'slack', 'discord', 'telegram', 'pagerduty'],
       required: true,
       default: 'webhook',
     },

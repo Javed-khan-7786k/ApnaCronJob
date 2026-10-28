@@ -1,7 +1,7 @@
 import app from './app.js';
 import env from './config/env.js';
 import logger from './config/logger.js';
-import { connectDB, disconnectDB } from './config/db.js';
+import { connectDB, disconnectDB, startBackgroundDbRetry } from './config/db.js';
 import { startInProcessScheduler, stopInProcessScheduler, triggerJobNow } from './services/schedulerService.js';
 import { startTelegramPolling, stopTelegramPolling } from './services/telegramService.js';
 import { startSelfPinger, stopSelfPinger } from './services/selfPingerService.js';
@@ -16,7 +16,8 @@ async function bootstrap() {
     try {
       await connectDB();
     } catch (dbErr) {
-      logger.warn(`Initial MongoDB connection failed: ${dbErr.message}. Server will start and retry in background.`);
+      logger.warn(`Initial MongoDB connection failed: ${dbErr.message}. Retrying in background...`);
+      startBackgroundDbRetry();
     }
 
     // 2. Start HTTP Express Server

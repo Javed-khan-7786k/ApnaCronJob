@@ -10,7 +10,7 @@ const INITIAL_INTEGRATIONS = [
     name: 'Slack Alerts Bot',
     category: 'Messaging',
     description: 'Post structured incident summaries and recovery announcements to designated Slack channels.',
-    connected: true,
+    connected: false,
     icon: 'slack',
   },
   {
@@ -24,21 +24,21 @@ const INITIAL_INTEGRATIONS = [
     name: 'PagerDuty Incident Escalation',
     category: 'Incident',
     description: 'Automatically trigger high-urgency incidents when primary production sync jobs fail.',
-    connected: true,
+    connected: false,
     icon: 'pagerduty',
   },
   {
     name: 'GitHub Actions Wakeup Mesh',
     category: 'DevOps',
     description: 'Trigger CI/CD deployment pipelines or receive scheduled cron ticks from GitHub runner pools.',
-    connected: true,
+    connected: false,
     icon: 'github',
   },
   {
     name: 'Generic HTTPS Webhook Sink',
     category: 'Webhooks',
     description: 'Deliver signed JSON payloads with HMAC-SHA256 signatures for custom downstream ingest.',
-    connected: true,
+    connected: false,
     icon: 'webhook',
   },
 ];
@@ -91,10 +91,13 @@ router.post('/:id/toggle', authenticateToken, async (req, res, next) => {
 router.put('/:id/config', authenticateToken, async (req, res, next) => {
   try {
     const { config } = req.body;
+    if (!config || typeof config !== 'object') {
+      return res.status(400).json({ success: false, error: 'Config must be a valid JSON object' });
+    }
     const item = await Integration.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
       { config },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!item) {
       return res.status(404).json({ success: false, error: 'Integration not found' });

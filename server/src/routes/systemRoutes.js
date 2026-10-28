@@ -60,6 +60,13 @@ router.get('/system/stats', authenticateToken, async (req, res, next) => {
     const oneDayAgo = new Date(Date.now() - (24 * 60 * 60 * 1000));
     const next24h = new Date(Date.now() + (24 * 60 * 60 * 1000));
 
+    const jobFilter = req.user && req.user.role !== 'admin' ? { createdBy: req.user._id } : {};
+    let executionFilter = {};
+    if (req.user && req.user.role !== 'admin') {
+      const userJobs = await Job.find({ createdBy: req.user._id }).select('_id');
+      executionFilter = { jobId: { $in: userJobs.map(j => j._id) } };
+    }
+
     const [
       totalJobs,
       enabledJobs,
@@ -70,14 +77,14 @@ router.get('/system/stats', authenticateToken, async (req, res, next) => {
       upcomingCount,
       lastSuccess,
     ] = await Promise.all([
-      Job.countDocuments(),
-      Job.countDocuments({ enabled: true }),
-      Execution.countDocuments(),
-      Execution.countDocuments({ status: 'completed', createdAt: { $gte: oneDayAgo } }),
-      Execution.countDocuments({ status: 'failed', createdAt: { $gte: oneDayAgo } }),
-      Execution.countDocuments({ status: 'retrying' }),
-      Job.countDocuments({ enabled: true, nextRunAt: { $gte: new Date(), $lte: next24h } }),
-      Execution.findOne({ status: 'completed' }).sort({ completedAt: -1 }).select('jobName completedAt durationMs'),
+      Job.countDocuments(jobFilter),
+      Job.countDocuments({ ...jobFilter, enabled: true }),
+      Execution.countDocuments(executionFilter),
+      Execution.countDocuments({ ...executionFilter, status: 'completed', createdAt: { $gte: oneDayAgo } }),
+      Execution.countDocuments({ ...executionFilter, status: 'failed', createdAt: { $gte: oneDayAgo } }),
+      Execution.countDocuments({ ...executionFilter, status: 'retrying' }),
+      Job.countDocuments({ ...jobFilter, enabled: true, nextRunAt: { $gte: new Date(), $lte: next24h } }),
+      Execution.findOne({ ...executionFilter, status: 'completed' }).sort({ completedAt: -1 }).select('jobName completedAt durationMs'),
     ]);
 
     res.json({

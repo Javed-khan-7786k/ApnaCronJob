@@ -27,9 +27,14 @@ export function errorHandler(err, req, res, next) {
   }
 
   const statusCode = err.statusCode || 500;
+  const isProduction = env.NODE_ENV === 'production';
+  const errorMessage = (statusCode === 500 && isProduction)
+    ? 'Internal server error occurred. Please try again later.'
+    : (err.message || 'Internal server error occurred.');
+
   res.status(statusCode).json({
     success: false,
-    error: err.message || 'Internal server error occurred.',
-    ...(env.NODE_ENV !== 'production' && { stack: err.stack }),
+    error: errorMessage,
+    ...(!isProduction && { stack: err.stack }),
   });
 }

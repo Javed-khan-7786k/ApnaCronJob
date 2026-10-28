@@ -56,17 +56,20 @@ export interface BackendHealth {
 
 export interface ApiResponse<T = any> {
   success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  token?: string;
+  data?: T | undefined;
+  result?: any;
+  error?: string | undefined;
+  message?: string | undefined;
+  token?: string | undefined;
   user?: any;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  pagination?:
+    | {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      }
+    | undefined;
 }
 
 class ApiError extends Error {
@@ -190,7 +193,13 @@ export const apiClient = {
    * Authentication
    */
   auth: {
-    async google(data: { email: string; name?: string; googleId?: string }) {
+    async google(data: {
+      credential?: string;
+      idToken?: string;
+      email?: string;
+      name?: string;
+      googleId?: string;
+    }) {
       const res = await request("/auth/google", {
         method: "POST",
         body: JSON.stringify(data),
@@ -325,6 +334,18 @@ export const apiClient = {
       return request("/jobs/validate-cron", {
         method: "POST",
         body: JSON.stringify({ cron }),
+      });
+    },
+
+    async testRequest(payload: {
+      url: string;
+      method?: string | undefined;
+      headers?: Record<string, string> | Array<{ key: string; value: string }> | undefined;
+      body?: string | undefined;
+    }) {
+      return request<{ success: boolean; result?: any; error?: string }>("/jobs/test-request", {
+        method: "POST",
+        body: JSON.stringify(payload),
       });
     },
   },

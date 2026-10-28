@@ -16,38 +16,7 @@ const getChannelsHandler = async (req, res, next) => {
       return res.json({ success: true, count: 0, data: [] });
     }
 
-    let channels = await NotificationChannel.find({ userId: req.user._id }).sort({ createdAt: -1 });
-
-    // Seed default channels if empty
-    if (channels.length === 0) {
-      channels = await NotificationChannel.create([
-        {
-          type: 'webhook',
-          label: 'Primary PagerDuty Hook',
-          target: 'https://events.pagerduty.com/v2/enqueue',
-          events: ['failures', 'retries'],
-          enabled: true,
-          userId: req.user._id,
-        },
-        {
-          type: 'slack',
-          label: '#cron-ops Alerts',
-          target: 'https://hooks.slack.com/services/T00/B00/XXXXX',
-          events: ['failures', 'recovers'],
-          enabled: true,
-          userId: req.user._id,
-        },
-        {
-          type: 'email',
-          label: 'Engineering On-Call',
-          target: req.user.email || 'ops@acme.dev',
-          events: ['failures'],
-          enabled: true,
-          userId: req.user._id,
-        },
-      ]);
-    }
-
+    const channels = await NotificationChannel.find({ userId: req.user._id }).sort({ createdAt: -1 });
     res.json({ success: true, data: channels });
   } catch (err) {
     next(err);
@@ -95,10 +64,18 @@ router.post('/channels', authenticateToken, createChannelHandler);
 
 const updateChannelHandler = async (req, res, next) => {
   try {
+    const { label, target, type, events, enabled } = req.body;
+    const updateDoc = {};
+    if (label !== undefined) updateDoc.label = String(label).trim();
+    if (target !== undefined) updateDoc.target = String(target).trim();
+    if (type !== undefined) updateDoc.type = type;
+    if (events !== undefined && Array.isArray(events)) updateDoc.events = events;
+    if (enabled !== undefined) updateDoc.enabled = Boolean(enabled);
+
     const channel = await NotificationChannel.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
-      req.body,
-      { new: true }
+      updateDoc,
+      { new: true, runValidators: true }
     );
     if (!channel) {
       return res.status(404).json({ success: false, error: 'Notification channel not found' });
@@ -142,23 +119,28 @@ const testChannelHandler = async (req, res, next) => {
       return res.json({ success: true, message: `Test message dispatched to Telegram chat ${channel.target}` });
     }
 
-    // If Webhook, Slack, or Discord
-    if (['webhook', 'slack', 'discord'].includes(channel.type)) {
-      if (channel.target.startsWith('http://') || channel.target.startsWith('https://')) {
-        const ssrfCheck = await validateUrlForSSRF(channel.target);
-        if (ssrfCheck.safe) {
-          try {
-            await axios.post(channel.target, testPayload, { timeout: 8000 });
-          } catch {
-            // quiet webhook error
-          }
-        }
+    // If Webhook, Slack, Discord, or PagerDuty
+    if (['webhook', 'slack', 'discord', 'pagerduty'].includes(channel.type)) {
+      if (!channel.target.startsWith('http://') && !channel.target.startsWith('https://')) {
+        return res.status(400).json({ success: false, error: 'Target URL must start with http:// or https://' });
+      }
+      const ssrfCheck = await validateUrlForSSRF(channel.target);
+      if (!ssrfCheck.safe) {
+        return res.status(400).json({ success: false, error: `SSRF Blocked: ${ssrfCheck.error}` });
+      }
+      try {
+        await axios.post(channel.target, testPayload, { timeout: 8000, maxRedirects: 0 });
+      } catch (postErr) {
+        return res.status(502).json({
+          success: false,
+          error: `Failed to deliver test payload to destination: ${postErr.message}`,
+        });
       }
     }
 
     res.json({
       success: true,
-      message: `Sample test notification successfully queued for "${channel.label}"`,
+      message: `Sample test notification successfully sent to "${channel.label}"`,
     });
   } catch (err) {
     next(err);

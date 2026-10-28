@@ -80,25 +80,34 @@ export function normalizeBackendJob(doc: any): Job {
     description: doc.description || "",
     url: doc.targetUrl || doc.url || "",
     method: String(doc.httpMethod || doc.method || "GET").toUpperCase() as HttpMethod,
-    cron: doc.cronExpression || doc.customCron || doc.cron || "0 * * * *",
+    cron:
+      doc.scheduleType === "once"
+        ? doc.cronExpression || ""
+        : doc.cronExpression || doc.customCron || doc.cron || "0 * * * *",
     timezone: doc.timezone || "Asia/Kolkata",
     enabled: doc.enabled !== false,
     status: (doc.status === "paused"
       ? "paused"
       : doc.status === "running"
         ? "running"
-        : doc.status === "failed"
-          ? "failed"
-          : "active") as JobStatus,
+        : doc.status === "retrying"
+          ? "retrying"
+          : doc.status === "failed"
+            ? "failed"
+            : "active") as JobStatus,
     createdAt: doc.createdAt || new Date().toISOString(),
     lastRunAt,
     lastRunMinutesAgo,
     lastStatus:
       doc.lastStatus === "success"
         ? "success"
-        : doc.lastStatus === "failure" || doc.lastStatus === "failed"
-          ? "failed"
-          : null,
+        : doc.lastStatus === "running"
+          ? "running"
+          : doc.lastStatus === "retrying"
+            ? "retrying"
+            : doc.lastStatus === "failure" || doc.lastStatus === "failed"
+              ? "failed"
+              : null,
     lastDurationMs: doc.lastDurationMs || null,
     lastHttpStatus: doc.lastHttpStatus || null,
     successCount: Number(doc.successCount) || 0,
@@ -106,7 +115,12 @@ export function normalizeBackendJob(doc: any): Job {
     timeoutSeconds: doc.timeoutMs
       ? Math.round(doc.timeoutMs / 1000)
       : Number(doc.timeoutSeconds) || 30,
-    maxRetries: doc.retryPolicy?.maxAttempts ?? (Number(doc.maxRetries) || 3),
+    maxRetries:
+      typeof doc.retryPolicy?.maxAttempts === "number"
+        ? doc.retryPolicy.maxAttempts
+        : typeof doc.maxRetries === "number"
+          ? doc.maxRetries
+          : 3,
     retryBackoff: doc.retryPolicy?.strategy === "fixed" ? "fixed" : "exponential",
     notifyEmail: doc.notifyEmail !== false,
     notifyWebhook: Boolean(doc.notifyWebhook),
@@ -142,13 +156,21 @@ export function normalizeBackendExecution(doc: any): Execution {
     jobName: doc.jobName || doc.job?.name || "Dispatched Task",
     status,
     startedMinutesAgo,
-    durationMs: Number(doc.durationMs) || 120,
-    httpStatus: doc.responseStatus ?? doc.httpStatus ?? 200,
+    durationMs: typeof doc.durationMs === "number" ? doc.durationMs : Number(doc.durationMs) || 0,
+    httpStatus:
+      doc.responseStatus !== undefined && doc.responseStatus !== null
+        ? Number(doc.responseStatus)
+        : doc.httpStatus !== undefined && doc.httpStatus !== null
+          ? Number(doc.httpStatus)
+          : status === "success"
+            ? 200
+            : null,
     attempt: Number(doc.attempt) || 1,
     errorDetail:
       doc.errorDetail ||
       doc.errorMessage ||
-      (status === "failed" ? "Execution returned non-2xx status" : null),
+      (doc.error ? String(doc.error) : null) ||
+      (status === "failed" && !doc.responseStatus ? "Network or execution error" : null),
   };
 }
 
@@ -292,14 +314,14 @@ export const DataStore = {
       description: job.description,
       targetUrl: job.url,
       httpMethod: job.method,
-      scheduleType: "custom",
-      customCron: job.cron,
-      cronExpression: job.cron,
+      scheduleType: job.cron ? "custom" : "once",
+      customCron: job.cron || undefined,
+      cronExpression: job.cron || undefined,
       timezone: job.timezone || "Asia/Kolkata",
       enabled: job.enabled,
       timeoutMs: (job.timeoutSeconds || 30) * 1000,
       retryPolicy: {
-        maxAttempts: job.maxRetries || 3,
+        maxAttempts: typeof job.maxRetries === "number" ? job.maxRetries : 3,
         strategy: job.retryBackoff || "exponential",
       },
       headers: job.headers.reduce(

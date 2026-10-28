@@ -39,11 +39,43 @@ export async function connectDB(uri = env.MONGODB_URI) {
   }
 }
 
+let retryIntervalTimer = null;
+
+export function startBackgroundDbRetry(uri = env.MONGODB_URI) {
+  if (retryIntervalTimer || (mongoose.connection && mongoose.connection.readyState === 1)) {
+    return;
+  }
+  logger.info('Starting background MongoDB reconnect loop (interval 5s)...');
+  retryIntervalTimer = setInterval(async () => {
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      clearInterval(retryIntervalTimer);
+      retryIntervalTimer = null;
+      return;
+    }
+    try {
+      await connectDB(uri);
+      logger.info('Background MongoDB reconnect succeeded!');
+      clearInterval(retryIntervalTimer);
+      retryIntervalTimer = null;
+    } catch (err) {
+      logger.warn(`Background MongoDB reconnection attempt failed: ${err.message}`);
+    }
+  }, 5000);
+}
+
+export function stopBackgroundDbRetry() {
+  if (retryIntervalTimer) {
+    clearInterval(retryIntervalTimer);
+    retryIntervalTimer = null;
+  }
+}
+
 export function isDatabaseHealthy() {
   return mongoose.connection.readyState === 1;
 }
 
 export async function disconnectDB() {
+  stopBackgroundDbRetry();
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
     isConnected = false;

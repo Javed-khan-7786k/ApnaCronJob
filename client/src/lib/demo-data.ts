@@ -777,7 +777,7 @@ export const demoIntegrations: Integration[] = [
     name: "Slack",
     category: "Messaging",
     description: "Send execution alerts and daily digests to channels.",
-    connected: true,
+    connected: false,
     icon: "slack",
   },
   {
@@ -793,7 +793,7 @@ export const demoIntegrations: Integration[] = [
     name: "Discord",
     category: "Messaging",
     description: "Post job results into a Discord channel via webhook.",
-    connected: true,
+    connected: false,
     icon: "discord",
   },
   {
@@ -817,7 +817,7 @@ export const demoIntegrations: Integration[] = [
     name: "GitHub",
     category: "DevOps",
     description: "Dispatch repository events and Actions workflows.",
-    connected: true,
+    connected: false,
     icon: "github",
   },
   {
@@ -833,7 +833,7 @@ export const demoIntegrations: Integration[] = [
     name: "Custom webhooks",
     category: "Webhooks",
     description: "Point retries, alerts and summaries anywhere.",
-    connected: true,
+    connected: false,
     icon: "webhook",
   },
 ];

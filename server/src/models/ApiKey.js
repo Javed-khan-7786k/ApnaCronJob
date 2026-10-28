@@ -17,10 +17,10 @@ const apiKeySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    scopes: [{
-      type: String,
+    scopes: {
+      type: [String],
       default: ['jobs:read', 'jobs:write', 'runs:dispatch'],
-    }],
+    },
     lastUsedAt: {
       type: Date,
       default: null,
