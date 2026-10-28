@@ -115,7 +115,6 @@ const jobSchema = new mongoose.Schema(
     enabled: {
       type: Boolean,
       default: true,
-      index: true,
     },
     status: {
       type: String,
@@ -125,7 +124,6 @@ const jobSchema = new mongoose.Schema(
     nextRunAt: {
       type: Date,
       default: null,
-      index: true,
     },
     lastRunAt: {
       type: Date,

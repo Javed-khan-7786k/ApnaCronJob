@@ -54,9 +54,7 @@ export function sanitizeHeaders(headers) {
   for (const [key, val] of Object.entries(headers)) {
     const lowerKey = key.toLowerCase();
     if (SENSITIVE_HEADER_KEYS.includes(lowerKey)) {
-      clean[key] = typeof val === 'string' && val.length > 8
-        ? `${val.substring(0, 4)}...[REDACTED]`
-        : '[REDACTED]';
+      clean[key] = '[REDACTED]';
     } else {
       clean[key] = val;
     }

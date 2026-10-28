@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       signIn: async (credentials) => {
         const loginIdentifier = (credentials?.login || credentials?.email || "").trim();
-        const password = (credentials?.password || "").trim();
+        const password = credentials?.password || "";
 
         if (!loginIdentifier || !password) {
           throw new Error("Please enter your username/email and password.");
@@ -198,13 +198,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp: async ({ name, email, password, workspace, telegramChatId, username }) => {
         const trimmedName = (name || "").trim();
         const trimmedEmail = (email || "").trim();
-        const trimmedPass = (password || "").trim();
+        const rawPassword = password || "";
 
-        if (!trimmedName || !trimmedEmail || !trimmedPass) {
+        if (!trimmedName || !trimmedEmail || !rawPassword) {
           throw new Error("Name, email, and password are required.");
         }
 
-        if (trimmedPass.length < 6) {
+        if (rawPassword.length < 6) {
           throw new Error("Password must be at least 6 characters.");
         }
 
@@ -217,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await apiClient.auth.register({
           username: cleanUsername,
           email: trimmedEmail.toLowerCase(),
-          password: trimmedPass,
+          password: rawPassword,
           telegramChatId: telegramChatId || "",
         });
 

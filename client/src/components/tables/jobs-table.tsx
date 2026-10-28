@@ -422,7 +422,9 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 text-xs font-mono">
                             <DropdownMenuItem
-                              onClick={() => navigate({ to: `/app/jobs/${job.id}` })}
+                              onClick={() =>
+                                navigate({ to: "/app/jobs/$jobId", params: { jobId: job.id } })
+                              }
                             >
                               View Details
                             </DropdownMenuItem>

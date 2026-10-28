@@ -16,7 +16,6 @@ const executionSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     status: {
       type: String,

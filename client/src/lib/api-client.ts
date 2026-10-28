@@ -95,10 +95,13 @@ async function request<T = any>(
   const token = getAuthToken();
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     Accept: "application/json",
     ...((options.headers as Record<string, string>) || {}),
   };
+
+  if (options.body && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token && !headers["Authorization"]) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -262,6 +265,20 @@ export const apiClient = {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
     },
+
+    async forgotPassword(email: string) {
+      return request("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+    },
+
+    async resetPassword(data: { email: string; code: string; newPassword: string }) {
+      return request("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
   },
 
   /**
@@ -394,6 +411,22 @@ export const apiClient = {
     }) {
       return request("/notifications", {
         method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+
+    async update(
+      id: string,
+      data: Partial<{
+        type: string;
+        label: string;
+        target: string;
+        events?: string[];
+        enabled?: boolean;
+      }>,
+    ) {
+      return request(`/notifications/${encodeURIComponent(id)}`, {
+        method: "PUT",
         body: JSON.stringify(data),
       });
     },

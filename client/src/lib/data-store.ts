@@ -40,7 +40,7 @@ const DEFAULT_SETTINGS: WorkspaceSettings = {
   workspaceName: "AapnaCronJob Production",
   supportEmail: "ops@apnascheduler.local",
   defaultTimeout: 60,
-  twoFactor: true,
+  twoFactor: false,
   enforceSso: false,
   timezone: "Asia/Kolkata",
   retentionDays: 30,
@@ -287,6 +287,22 @@ export const DataStore = {
         // quiet settings fallback
       }
 
+      // 8. Sync Integrations from MongoDB
+      try {
+        const intRes = await apiClient.integrations.list();
+        if (intRes && intRes.success && Array.isArray(intRes.data) && intRes.data.length > 0) {
+          const backendIntegrations: Integration[] = intRes.data.map((item: any) => ({
+            id: String(item._id || item.id),
+            name: item.name || "Integration",
+            category: item.category || "General",
+            description: item.description || "",
+            connected: Boolean(item.connected),
+            icon: item.icon || "webhook",
+          }));
+          setStorageItem(INTEGRATIONS_STORAGE_KEY, backendIntegrations);
+        }
+      } catch {}
+
       return true;
     } catch (err: any) {
       console.warn("Backend synchronization notice:", err?.message || err);
@@ -530,9 +546,11 @@ export const DataStore = {
     const channels = this.getChannels();
     const target = channels.find((c) => c.id === id);
     if (!target) return undefined;
-    const updated = channels.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c));
+    const nextEnabled = !target.enabled;
+    const updated = channels.map((c) => (c.id === id ? { ...c, enabled: nextEnabled } : c));
     this.saveChannels(updated);
-    return { ...target, enabled: !target.enabled };
+    apiClient.notifications.update(id, { enabled: nextEnabled }).catch(() => {});
+    return { ...target, enabled: nextEnabled };
   },
 
   async deleteChannel(id: string): Promise<void> {

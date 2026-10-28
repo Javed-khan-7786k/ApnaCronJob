@@ -128,7 +128,9 @@ export function CommandPalette({
               <CommandItem
                 key={job.id}
                 value={job.name}
-                onSelect={() => runCommand(() => navigate({ to: `/app/jobs/${job.id}` }))}
+                onSelect={() =>
+                  runCommand(() => navigate({ to: "/app/jobs/$jobId", params: { jobId: job.id } }))
+                }
               >
                 <span className="h-2 w-2 rounded-full bg-cobalt mr-2" />
                 <div className="flex flex-col">

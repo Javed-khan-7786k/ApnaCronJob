@@ -9,6 +9,8 @@ import { validateRequest } from '../middleware/validate.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import { logAuditEvent } from '../services/auditService.js';
 import env from '../config/env.js';
+import logger from '../config/logger.js';
+import { sendTelegramMessage } from '../services/telegramService.js';
 
 const router = express.Router();
 
@@ -78,7 +80,8 @@ router.post('/register', authLimiter, validateRequest(registerSchema), async (re
 
     // First user created is automatically admin
     const userCount = await User.countDocuments();
-    const role = userCount === 0 ? 'admin' : 'user';
+    const adminEmail = (process.env.ADMIN_EMAIL || env.ADMIN_EMAIL || '').toLowerCase();
+    const role = (adminEmail && email.toLowerCase() === adminEmail) || userCount === 0 ? 'admin' : 'user';
 
     const hashedPassword = await hashPassword(password);
     const user = await User.create({
@@ -409,6 +412,75 @@ router.put('/password', authenticateToken, validateRequest(changePasswordSchema)
       success: true,
       message: 'Password updated successfully.',
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', authLimiter, async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid email is required.' });
+    }
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (user) {
+      const resetCode = String(Math.floor(100000 + crypto.randomInt(900000)));
+      const tokenHash = crypto.createHash('sha256').update(resetCode).digest('hex');
+      user.resetPasswordToken = tokenHash;
+      user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+      await user.save();
+
+      logger.info('Password recovery token generated for user', { email: user.email });
+      if (user.telegramChatId) {
+        sendTelegramMessage(user.telegramChatId, `🔐 <b>AapnaCronJob Password Reset:</b> Your 6-digit recovery code is <code>${resetCode}</code> (valid for 15 minutes).`).catch(() => {});
+      }
+    }
+    res.json({
+      success: true,
+      message: 'If an account exists with that email address, a 6-digit recovery code has been dispatched.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', authLimiter, async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Email, recovery code, and new password are required.' });
+    }
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'New password must be at least 6 characters.' });
+    }
+    const tokenHash = crypto.createHash('sha256').update(String(code).trim()).digest('hex');
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+      resetPasswordToken: tokenHash,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired recovery code.' });
+    }
+    user.password = await hashPassword(newPassword);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    await logAuditEvent({
+      userId: user._id,
+      username: user.username,
+      action: 'USER_PASSWORD_RESET',
+      targetType: 'user',
+      targetId: user._id,
+      ip: req.ip,
+    });
+
+    res.json({ success: true, message: 'Password has been reset successfully. You can now log in.' });
   } catch (err) {
     next(err);
   }

@@ -139,36 +139,42 @@ export function SettingsSecurityPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-xs text-foreground block">
-                  Two-Factor Authentication (MFA)
+                  Two-Factor Authentication (MFA / TOTP)
                 </span>
-                {twoFactor && (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-[10px]">
-                    Active
-                  </Badge>
-                )}
+                <Badge
+                  variant="outline"
+                  className="text-amber-500 border-amber-500/30 text-[10px] font-mono"
+                >
+                  Enterprise (Coming Soon)
+                </Badge>
               </div>
               <span className="text-[11px] text-muted-foreground font-sans">
-                Require a TOTP authenticator code when signing into this workspace.
+                TOTP authenticator app enforcement (Google Authenticator, 1Password) is scheduled
+                for the upcoming Enterprise update.
               </span>
             </div>
-            <Switch checked={twoFactor} onCheckedChange={handle2FAToggle} />
+            <Switch checked={false} disabled onCheckedChange={handle2FAToggle} />
           </div>
 
           <div className="flex items-center justify-between border-t border-border/60 pt-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-xs text-foreground block">
-                  Enforce SAML Single Sign-On
+                  Enforce SAML 2.0 Single Sign-On
                 </span>
-                {enforceSso && (
-                  <Badge className="bg-cobalt/10 text-cobalt font-mono text-[10px]">Enforced</Badge>
-                )}
+                <Badge
+                  variant="outline"
+                  className="text-amber-500 border-amber-500/30 text-[10px] font-mono"
+                >
+                  Enterprise (Coming Soon)
+                </Badge>
               </div>
               <span className="text-[11px] text-muted-foreground font-sans">
-                Require all team members to authenticate through Okta or Google Workspace SSO.
+                Enterprise identity provider federation through Okta, Azure AD, or Google Workspace
+                SSO is currently in development.
               </span>
             </div>
-            <Switch checked={enforceSso} onCheckedChange={handleSAMLToggle} />
+            <Switch checked={false} disabled onCheckedChange={handleSAMLToggle} />
           </div>
 
           <div className="rounded-lg border border-border bg-paper-sunken p-4 space-y-2 text-xs font-mono">

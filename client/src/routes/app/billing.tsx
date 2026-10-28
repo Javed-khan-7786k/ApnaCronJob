@@ -29,7 +29,7 @@ export function BillingManagementPage() {
   }, []);
 
   const activeJobsCount = jobs.filter((j) => j.enabled).length;
-  const invocationsCount = Math.max(executions.length, 42810);
+  const invocationsCount = executions.length;
 
   const invoices = [
     { id: "INV-2026-009", date: "Oct 1, 2026", amount: "$24.00", status: "Paid" },
@@ -65,32 +65,33 @@ export function BillingManagementPage() {
         </div>
 
         {/* Current Plan Card */}
-        <div className="rounded-xl border-2 border-cobalt bg-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xs">
+        <div className="rounded-xl border-2 border-emerald-500/40 bg-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xs">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="font-display font-bold text-xl text-foreground">
-                Professional Plan
+                Community Edition
               </span>
-              <Badge className="bg-cobalt text-white font-mono text-[10px]">
-                Active Subscription
+              <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-[10px]">
+                Free & Open Source
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground font-sans">
-              $24.00 billed monthly on the 1st. Next billing date: November 1, 2026.
+              Free forever for self-hosted instances and development environments. All core
+              automation features included.
             </p>
             <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground pt-1">
-              <span>Unlimited Jobs</span>
+              <span>Unlimited Local Jobs</span>
               <span>•</span>
-              <span>90-Day Retention</span>
+              <span>Configurable Retention</span>
               <span>•</span>
-              <span>Sub-Second Precision</span>
+              <span>Telegram & Webhook Alerts</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Link to="/pricing">
               <Button variant="outline" size="sm" className="font-mono text-xs">
-                Change Plan
+                View All Plans
               </Button>
             </Link>
           </div>

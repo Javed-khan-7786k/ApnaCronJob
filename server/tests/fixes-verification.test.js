@@ -80,4 +80,17 @@ describe('Top 10 Bug & Security Fixes Verification', () => {
       expect(nextRun.getTime()).toBeGreaterThan(Date.now());
     });
   });
+  describe('U3: Password recovery endpoints validation', () => {
+    it('POST /api/auth/forgot-password validates email requirement', async () => {
+      const res = await request(app).post('/api/auth/forgot-password').send({});
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('POST /api/auth/reset-password validates required fields', async () => {
+      const res = await request(app).post('/api/auth/reset-password').send({ email: 'test@example.com' });
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+  });
 });

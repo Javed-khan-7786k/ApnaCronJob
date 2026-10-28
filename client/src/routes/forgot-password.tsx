@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
 import { pageHead } from "@/lib/head";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () =>
@@ -24,14 +25,28 @@ export function ForgotPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [resetComplete, setResetComplete] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    setSent(true);
-    toast.success(`Secure password reset token dispatched to ${email}`);
+    setSubmitting(true);
+    try {
+      const res = await apiClient.auth.forgotPassword(email.trim());
+      if (res && res.success) {
+        setSent(true);
+        toast.success(res.message || `Recovery instructions dispatched for ${email}`);
+      } else {
+        toast.error(res?.error || "Failed to initiate password recovery.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to communicate with authentication server.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetCode || !newPassword) {
       toast.error("Please enter the recovery token and your new password.");
@@ -41,8 +56,24 @@ export function ForgotPasswordPage() {
       toast.error("New password must be at least 6 characters.");
       return;
     }
-    setResetComplete(true);
-    toast.success("Password updated successfully! You can now log in.");
+    setSubmitting(true);
+    try {
+      const res = await apiClient.auth.resetPassword({
+        email: email.trim(),
+        code: resetCode.trim(),
+        newPassword,
+      });
+      if (res && res.success) {
+        setResetComplete(true);
+        toast.success(res.message || "Password updated successfully! You can now log in.");
+      } else {
+        toast.error(res?.error || "Invalid or expired recovery code.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update password.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

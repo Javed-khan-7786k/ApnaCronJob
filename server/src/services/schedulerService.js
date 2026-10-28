@@ -6,6 +6,7 @@ import env from '../config/env.js';
 import logger from '../config/logger.js';
 import { calculateNextRunAt } from '../utils/cronHelper.js';
 import { executeHttpRequest } from './httpExecutor.js';
+import { sanitizeHeaders } from '../utils/sanitize.js';
 import { calculateRetryDelay, shouldRetry } from './retryService.js';
 import { dispatchExecutionNotification } from './telegramService.js';
 
@@ -407,7 +408,7 @@ export async function processSchedulerTick(source = 'scheduler') {
           requestDetails: {
             url: job.targetUrl,
             method: job.httpMethod,
-            headers: job.headers,
+            headers: sanitizeHeaders(job.headers instanceof Map ? Object.fromEntries(job.headers) : (job.headers || {})),
             body: job.body,
           },
           workerId: WORKER_ID,
@@ -475,7 +476,7 @@ export async function triggerJobNow(job, source = 'manual') {
     requestDetails: {
       url: job.targetUrl,
       method: job.httpMethod,
-      headers: job.headers,
+      headers: sanitizeHeaders(job.headers instanceof Map ? Object.fromEntries(job.headers) : (job.headers || {})),
       body: job.body,
     },
     workerId: WORKER_ID,

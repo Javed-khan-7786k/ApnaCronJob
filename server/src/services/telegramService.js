@@ -51,14 +51,26 @@ export async function sendTelegramMessage(chatId, text, parseMode = 'HTML') {
     return false;
   }
 
+  const safeText = String(text || '');
+  const chunks = [];
+  if (safeText.length <= 4000) {
+    chunks.push(safeText);
+  } else {
+    for (let i = 0; i < safeText.length; i += 4000) {
+      chunks.push(safeText.substring(i, i + 4000));
+    }
+  }
+
   const endpoint = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
   try {
-    await axios.post(endpoint, {
-      chat_id: chatId,
-      text: text,
-      parse_mode: parseMode,
-      disable_web_page_preview: true,
-    }, { timeout: 10000 });
+    for (const chunk of chunks) {
+      await axios.post(endpoint, {
+        chat_id: chatId,
+        text: chunk,
+        parse_mode: parseMode,
+        disable_web_page_preview: true,
+      }, { timeout: 10000 });
+    }
     return true;
   } catch (err) {
     logger.warn('Failed to send Telegram message', {
@@ -107,6 +119,9 @@ export async function dispatchExecutionNotification(job, execution, eventType) {
 
   if (eventType === 'success' && settings.notifyOnSuccess) {
     title = `✅ <b>Job Succeeded: ${jobName}</b>`;
+  } else if (eventType === 'retry' && settings.notifyOnFailure) {
+    title = `🔄 <b>Job Attempt Failed (Retrying): ${jobName}</b>`;
+    icon = '🔄';
   } else if (eventType === 'failure' && settings.notifyOnFailure) {
     title = `⚠️ <b>Job Attempt Failed: ${jobName}</b>`;
     icon = '⚠️';
@@ -235,9 +250,11 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
         }
         await sendTelegramMessage(chatId, `🚀 Initiating manual execution for <b>${escapeHtml(job.name)}</b>...`);
         if (runJobNowCallback) {
-          await runJobNowCallback(job, 'telegram');
+          runJobNowCallback(job, 'telegram').catch(err => {
+            logger.error('Error running job from Telegram trigger', { error: err.message });
+          });
         }
-        await sendTelegramMessage(chatId, `✅ Manual run completed for <b>${escapeHtml(job.name)}</b>.`);
+        await sendTelegramMessage(chatId, `🚀 Manual run triggered in background for <b>${escapeHtml(job.name)}</b>.`);
       } catch (err) {
         await sendTelegramMessage(chatId, `❌ Failed to execute job: ${escapeHtml(err.message)}`);
       }
@@ -254,7 +271,7 @@ export async function handleTelegramMessage(message, runJobNowCallback) {
         return;
       }
       try {
-        const job = await Job.findByIdAndUpdate(arg, { enabled: false, status: 'paused' }, { new: true });
+        const job = await Job.findByIdAndUpdate(arg, { enabled: false, status: 'paused', nextRunAt: null }, { new: true });
         if (!job) {
           await sendTelegramMessage(chatId, `❌ Job not found with ID <code>${escapeHtml(arg)}</code>`);
         } else {
