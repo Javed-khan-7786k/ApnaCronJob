@@ -23,7 +23,8 @@ RUN cd server && npm ci --omit=dev
 COPY server/ ./server/
 
 # Copy built frontend assets into server public folder if serving unified
-COPY --from=client-builder /app/client/dist ./server/public
+# TanStack Start with Nitro outputs public assets to .output/public
+COPY --from=client-builder /app/client/.output/public ./server/public
 
 WORKDIR /app/server
 EXPOSE 5000

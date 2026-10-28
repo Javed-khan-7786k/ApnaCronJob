@@ -32,8 +32,13 @@ app.use(helmet({
 }));
 
 // CORS Configuration
+const configuredOrigins = (env.CLIENT_URL || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
-  env.CLIENT_URL,
+  ...configuredOrigins,
   'http://localhost:8080',
   'http://127.0.0.1:8080',
   'http://localhost:5173',
@@ -44,11 +49,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin or any localhost/127.0.0.1 port or configured allowedOrigins
-    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production' || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    // Allow requests with no origin, any localhost/127.0.0.1 port, wildcard, or configured allowedOrigins
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*') || env.NODE_ENV !== 'production' || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS policy does not allow access from origin: ${origin}`));
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -113,7 +118,25 @@ if (staticDir) {
     if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/internal')) {
       return next();
     }
-    res.sendFile(path.join(staticDir, 'index.html'));
+    const htmlFile = path.join(staticDir, 'index.html');
+    if (fs.existsSync(htmlFile)) {
+      return res.sendFile(htmlFile);
+    }
+    return res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Apna Scheduler Backend</title>
+        </head>
+        <body style="font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem;">
+          <h2>🚀 Apna Scheduler OS API is Active</h2>
+          <p>The backend scheduler service is operational.</p>
+          <p><a href="/api/health" style="color: #38bdf8;">Health Check</a> &bull; <a href="/api/ready" style="color: #38bdf8;">Readiness Probe</a></p>
+        </body>
+      </html>
+    `);
   });
 }
 

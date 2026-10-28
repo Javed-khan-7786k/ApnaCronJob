@@ -236,24 +236,50 @@ export async function processDueRetries() {
   let retryCount = 0;
 
   try {
-    const dueRetries = await Execution.find({
+    const dueCandidates = await Execution.find({
       status: 'retrying',
       nextRetryAt: { $lte: now },
       $or: [
         { lockedUntil: null },
         { lockedUntil: { $lt: now } }
       ]
-    }).limit(10);
+    }).select('_id jobId').limit(10);
 
-    const retryPromises = dueRetries.map(async (exec) => {
-      const job = await Job.findById(exec.jobId);
-      if (!job) {
-        exec.status = 'failed';
-        exec.errorDetails = { message: 'Parent job was deleted during retry phase' };
-        await exec.save();
+    const retryPromises = dueCandidates.map(async (candidate) => {
+      // Atomically claim the retry execution so no other concurrent tick/process can execute it
+      const claimedExec = await Execution.findOneAndUpdate(
+        {
+          _id: candidate._id,
+          status: 'retrying',
+          $or: [
+            { lockedUntil: null },
+            { lockedUntil: { $lt: now } },
+          ],
+        },
+        {
+          $set: {
+            status: 'running',
+            workerId: WORKER_ID,
+            lockedUntil: new Date(now.getTime() + 75000), // initial claim lease
+          },
+        },
+        { new: true }
+      );
+
+      if (!claimedExec) {
+        // Concurrently claimed by another worker/tick, skip to prevent duplicate run
         return;
       }
-      await performExecution(job, exec);
+
+      const job = await Job.findById(claimedExec.jobId);
+      if (!job) {
+        claimedExec.status = 'failed';
+        claimedExec.errorDetails = { message: 'Parent job was deleted during retry phase' };
+        await claimedExec.save();
+        return;
+      }
+
+      await performExecution(job, claimedExec);
       retryCount++;
     });
 

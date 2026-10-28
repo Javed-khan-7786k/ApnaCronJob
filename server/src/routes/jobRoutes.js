@@ -280,9 +280,14 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 // PUT /api/jobs/:id
 router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
+    const existing = await findJobDoc(req.params.id, req.user);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
     const data = normalizeJobInput(req.body);
 
-    if (data.targetUrl) {
+    if (data.targetUrl && data.targetUrl !== existing.targetUrl) {
       const ssrfCheck = await validateUrlForSSRF(data.targetUrl);
       if (!ssrfCheck.safe) {
         return res.status(400).json({
@@ -292,53 +297,103 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
       }
     }
 
-    const tz = data.timezone || 'Asia/Kolkata';
-    if (!isValidTimezone(tz)) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid IANA timezone "${tz}".`,
-      });
-    }
-
-    let cronExpression = data.cronExpression || '';
-    if (data.scheduleType === 'custom' || data.customCron) {
-      const expr = data.customCron || data.cron;
-      const cronValidation = validateCronExpression(expr);
-      if (!cronValidation.valid) {
+    let tz = existing.timezone || 'Asia/Kolkata';
+    if (data.timezone !== undefined) {
+      if (!isValidTimezone(data.timezone)) {
         return res.status(400).json({
           success: false,
-          error: `Invalid cron expression: ${cronValidation.error}`,
+          error: `Invalid IANA timezone "${data.timezone}".`,
         });
       }
-      cronExpression = expr;
-    } else if (data.scheduleType !== 'once') {
-      cronExpression = buildCronExpression({
-        type: data.scheduleType || 'daily',
-        time: data.scheduleTime || '00:00',
-        daysOfWeek: data.daysOfWeek || [],
-        daysOfMonth: data.daysOfMonth || [],
-        customCron: data.customCron,
+      tz = data.timezone;
+    }
+
+    const scheduleUpdated = (
+      req.body.scheduleType !== undefined ||
+      req.body.scheduleTime !== undefined ||
+      req.body.time !== undefined ||
+      req.body.cron !== undefined ||
+      req.body.customCron !== undefined ||
+      req.body.cronExpression !== undefined ||
+      req.body.daysOfWeek !== undefined ||
+      req.body.daysOfMonth !== undefined ||
+      req.body.oneTimeRunAt !== undefined ||
+      data.timezone !== undefined
+    );
+
+    let cronExpression = existing.cronExpression;
+    let scheduleType = existing.scheduleType;
+
+    if (scheduleUpdated) {
+      scheduleType = data.scheduleType !== undefined ? data.scheduleType : existing.scheduleType;
+
+      if (scheduleType === 'custom' || data.customCron || (data.cron && scheduleType !== 'once')) {
+        const expr = data.customCron || data.cron || data.cronExpression;
+        const cronValidation = validateCronExpression(expr);
+        if (!cronValidation.valid) {
+          return res.status(400).json({
+            success: false,
+            error: `Invalid cron expression: ${cronValidation.error}`,
+          });
+        }
+        cronExpression = expr;
+        scheduleType = 'custom';
+      } else if (scheduleType === 'once') {
+        cronExpression = '';
+      } else {
+        cronExpression = buildCronExpression({
+          type: scheduleType || 'daily',
+          time: data.scheduleTime || data.time || '00:00',
+          daysOfWeek: data.daysOfWeek || existing.daysOfWeek || [],
+          daysOfMonth: data.daysOfMonth || existing.daysOfMonth || [],
+          customCron: data.customCron,
+        });
+      }
+    }
+
+    let enabled = existing.enabled;
+    let status = existing.status;
+
+    if (data.enabled !== undefined) {
+      enabled = Boolean(data.enabled);
+      status = enabled ? 'active' : 'paused';
+    } else if (data.status !== undefined) {
+      status = data.status;
+      enabled = status === 'active';
+    }
+
+    let nextRunAt = existing.nextRunAt;
+    if (!enabled) {
+      nextRunAt = null;
+    } else if (scheduleUpdated || data.enabled !== undefined) {
+      nextRunAt = calculateNextRunAt({
+        ...existing.toObject(),
+        ...data,
+        scheduleType,
+        cronExpression,
+        timezone: tz,
+        enabled,
       });
     }
 
-    const updateDoc = {
-      ...data,
+    // Mass-assignment protection: exclude immutable/system metrics
+    const protectedFields = ['_id', 'createdBy', 'totalRuns', 'successCount', 'failureCount', 'createdAt', 'updatedAt'];
+    const allowedData = { ...data };
+    for (const field of protectedFields) {
+      delete allowedData[field];
+    }
+
+    existing.set({
+      ...allowedData,
+      timezone: tz,
+      scheduleType,
       cronExpression,
-      status: data.enabled !== false ? 'active' : 'paused',
-    };
+      enabled,
+      status,
+      nextRunAt,
+    });
 
-    if (data.enabled !== false) {
-      updateDoc.nextRunAt = calculateNextRunAt(updateDoc);
-    } else {
-      updateDoc.nextRunAt = null;
-    }
-
-    const existing = await findJobDoc(req.params.id, req.user);
-    if (!existing) {
-      return res.status(404).json({ success: false, error: 'Job not found' });
-    }
-
-    const job = await Job.findByIdAndUpdate(existing._id, updateDoc, { new: true });
+    const job = await existing.save();
 
     await logAuditEvent({
       userId: req.user?._id,

@@ -13,8 +13,10 @@ export function getApiBaseUrl(): string {
     if (runtimeUrl) return runtimeUrl.replace(/\/+$/, "");
   }
 
-  // Primary source of truth: Environment variable VITE_API_URL
-  const envUrl = (import.meta.env as Record<string, string | undefined>)["VITE_API_URL"];
+  // Primary source of truth: Environment variable VITE_API_URL or VITE_API_BASE_URL
+  const envUrl =
+    (import.meta.env as Record<string, string | undefined>)["VITE_API_URL"] ||
+    (import.meta.env as Record<string, string | undefined>)["VITE_API_BASE_URL"];
   if (envUrl) {
     return envUrl.replace(/\/+$/, "");
   }

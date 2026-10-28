@@ -4,7 +4,7 @@ import { isDatabaseHealthy } from '../config/db.js';
 import env from '../config/env.js';
 import Job from '../models/Job.js';
 import Execution from '../models/Execution.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 const serverStartTime = Date.now();
@@ -111,18 +111,37 @@ import {
   updateSelfPingerConfig,
   executePing,
 } from '../services/selfPingerService.js';
+import { validateUrlForSSRF } from '../utils/ssrf.js';
 
-// GET /api/system/self-pinger (Get keepalive status)
-router.get('/system/self-pinger', (req, res) => {
+// GET /api/system/self-pinger (Get keepalive status - Admin only)
+router.get('/system/self-pinger', authenticateToken, requireAdmin, (req, res) => {
   res.json({
     success: true,
     data: getSelfPingerStatus(),
   });
 });
 
-// POST /api/system/self-pinger (Configure self-pinger)
-router.post('/system/self-pinger', (req, res) => {
+// POST /api/system/self-pinger (Configure self-pinger - Admin only)
+router.post('/system/self-pinger', authenticateToken, requireAdmin, async (req, res) => {
   const { enabled, intervalMs, targetUrl } = req.body;
+
+  if (targetUrl && typeof targetUrl === 'string' && targetUrl.trim()) {
+    const ssrfCheck = await validateUrlForSSRF(targetUrl.trim());
+    if (!ssrfCheck.safe) {
+      return res.status(400).json({
+        success: false,
+        error: `SSRF Violation: Target URL rejected: ${ssrfCheck.error}`,
+      });
+    }
+  }
+
+  if (intervalMs !== undefined && (isNaN(Number(intervalMs)) || Number(intervalMs) < 30000)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid intervalMs: minimum interval is 30000ms (30 seconds)',
+    });
+  }
+
   const updated = updateSelfPingerConfig({ enabled, intervalMs, targetUrl });
   res.json({
     success: true,
@@ -131,8 +150,8 @@ router.post('/system/self-pinger', (req, res) => {
   });
 });
 
-// POST /api/system/self-pinger/ping-now (Manual test ping)
-router.post('/system/self-pinger/ping-now', async (req, res) => {
+// POST /api/system/self-pinger/ping-now (Manual test ping - Admin only)
+router.post('/system/self-pinger/ping-now', authenticateToken, requireAdmin, async (req, res) => {
   const result = await executePing();
   res.json({
     success: result.success,

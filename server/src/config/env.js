@@ -10,11 +10,25 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
+export const INSECURE_SECRET_BLACKLIST = [
+  'default_jwt_secret_key_needs_replacement_in_prod_123456',
+  'change_this_to_a_long_random_jwt_secret_in_prod_123456',
+  'your_jwt_secret_here',
+  'supersecretjwtkey_at_least_16_chars_long',
+  'apna_tick_secret_backup_cron_2026',
+  'your_secure_internal_tick_secret_key_here',
+  'internal_tick_secret_for_scheduler_trigger_12345',
+  'secret',
+  'changeme',
+  'password123',
+];
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(val => parseInt(val, 10)).default('5000'),
   CLIENT_URL: z.string().default('http://localhost:5173'),
   MONGODB_URI: z.string().default('mongodb://127.0.0.1:27017/apna_scheduler'),
+  ADMIN_EMAIL: z.string().optional().default(''),
   JWT_SECRET: z.string().min(16).default('default_jwt_secret_key_needs_replacement_in_prod_123456'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   INTERNAL_TICK_SECRET: z.string().min(8).default('apna_tick_secret_backup_cron_2026'),
@@ -41,6 +55,23 @@ const envSchema = z.object({
   // Security
   ALLOWED_DOMAINS: z.string().optional().default(''),
   ALLOW_PRIVATE_NETWORK_TARGETS: z.string().transform(v => v === 'true').default('false'),
+}).superRefine((data, ctx) => {
+  if (data.NODE_ENV === 'production') {
+    if (!data.JWT_SECRET || data.JWT_SECRET.length < 32 || INSECURE_SECRET_BLACKLIST.includes(data.JWT_SECRET)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_SECRET'],
+        message: 'In production, JWT_SECRET must be explicitly configured, at least 32 characters long, and cannot be a default or placeholder.',
+      });
+    }
+    if (!data.INTERNAL_TICK_SECRET || data.INTERNAL_TICK_SECRET.length < 16 || INSECURE_SECRET_BLACKLIST.includes(data.INTERNAL_TICK_SECRET)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['INTERNAL_TICK_SECRET'],
+        message: 'In production, INTERNAL_TICK_SECRET must be explicitly configured, at least 16 characters long, and cannot be a default or placeholder.',
+      });
+    }
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -52,5 +83,9 @@ if (!parsed.success) {
   }
 }
 
-export const env = parsed.success ? parsed.data : envSchema.parse({});
+export const env = parsed.success ? parsed.data : envSchema.parse({
+  ...process.env,
+  JWT_SECRET: process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16 ? process.env.JWT_SECRET : undefined,
+  INTERNAL_TICK_SECRET: process.env.INTERNAL_TICK_SECRET && process.env.INTERNAL_TICK_SECRET.length >= 8 ? process.env.INTERNAL_TICK_SECRET : undefined,
+});
 export default env;

@@ -139,14 +139,18 @@ export function JobForm({ initialJob, isEditing = false, onSave }: JobFormProps)
       tags: initialJob?.tags || ["custom"],
     };
 
-    const persisted = await DataStore.saveJob(savedJob);
-    if (onSave) onSave(persisted);
-    toast.success(
-      isEditing
-        ? `Job “${name}” updated in database!`
-        : `Job “${name}” saved directly to MongoDB database!`,
-    );
-    navigate({ to: "/app/jobs" });
+    try {
+      const persisted = await DataStore.saveJob(savedJob);
+      if (onSave) onSave(persisted);
+      toast.success(
+        isEditing
+          ? `Job “${name}” updated in database!`
+          : `Job “${name}” saved directly to MongoDB database!`,
+      );
+      navigate({ to: "/app/jobs" });
+    } catch (err: any) {
+      toast.error(`Failed to save job: ${err.message || "Error occurred while saving"}`);
+    }
   };
 
   return (

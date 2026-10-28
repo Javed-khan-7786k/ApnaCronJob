@@ -6,9 +6,18 @@ async function seedAdmin() {
   console.log('Connecting to database...');
   await connectDB();
 
-  const username = process.env.DEFAULT_ADMIN_USERNAME || 'javedkhan';
-  const email = process.env.DEFAULT_ADMIN_EMAIL || 'javedkhan7786king@gmail.com';
-  const password = process.argv[2] || process.env.DEFAULT_ADMIN_PASSWORD || 'javedkhan1234';
+  const username = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
+  const email = process.env.DEFAULT_ADMIN_EMAIL;
+  const password = process.argv[2] || process.env.DEFAULT_ADMIN_PASSWORD;
+
+  if (!email || !password) {
+    console.error('\n❌ Missing required admin credentials!');
+    console.error('Please specify both DEFAULT_ADMIN_EMAIL and DEFAULT_ADMIN_PASSWORD via environment variables, or pass the password as a CLI argument:');
+    console.error('  DEFAULT_ADMIN_EMAIL=admin@example.com DEFAULT_ADMIN_PASSWORD=your_secure_password node src/seedAdmin.js');
+    console.error('  node src/seedAdmin.js <password>\n');
+    await disconnectDB();
+    process.exit(1);
+  }
 
   const hashedPassword = await hashPassword(password);
 
@@ -39,7 +48,7 @@ async function seedAdmin() {
   console.log('------------------------------------------');
   console.log(`👤 Username: ${username}`);
   console.log(`📧 Email:    ${email}`);
-  console.log(`🔑 Password: ${password}`);
+  console.log(`🔑 Password: [CONFIGURED - HIDDEN FOR SECURITY]`);
   console.log('------------------------------------------');
   console.log('🌐 Login at: http://localhost:5173/login');
   console.log('==========================================\n');

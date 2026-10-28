@@ -317,20 +317,20 @@ export const DataStore = {
 
     let persistedJob = job;
 
-    try {
-      if (isNew) {
-        const res = await apiClient.jobs.create(payload);
-        if (res.success && res.data) {
-          persistedJob = normalizeBackendJob(res.data);
-        }
+    if (isNew) {
+      const res = await apiClient.jobs.create(payload);
+      if (res && res.success && res.data) {
+        persistedJob = normalizeBackendJob(res.data);
       } else {
-        const res = await apiClient.jobs.update(job.id, payload);
-        if (res.success && res.data) {
-          persistedJob = normalizeBackendJob(res.data);
-        }
+        throw new Error(res?.error || "Failed to create job in database");
       }
-    } catch (err: any) {
-      console.warn("Backend job save notice:", err.message);
+    } else {
+      const res = await apiClient.jobs.update(job.id, payload);
+      if (res && res.success && res.data) {
+        persistedJob = normalizeBackendJob(res.data);
+      } else {
+        throw new Error(res?.error || "Failed to update job in database");
+      }
     }
 
     const currentJobs = this.getJobs();
@@ -390,6 +390,10 @@ export const DataStore = {
   async deleteJob(id: string): Promise<void> {
     const jobs = this.getJobs();
     const target = jobs.find((j) => j.id === id);
+
+    // Call backend API first; if it fails, throw error and preserve local state
+    await apiClient.jobs.delete(id);
+
     const updated = jobs.filter((j) => j.id !== id);
     setStorageItem(JOBS_STORAGE_KEY, updated);
 
@@ -402,11 +406,6 @@ export const DataStore = {
         target: target.name,
         kind: "job.deleted",
       });
-      try {
-        await apiClient.jobs.delete(id);
-      } catch (err: any) {
-        console.warn("Backend delete notice:", err.message);
-      }
     }
   },
 
@@ -442,31 +441,25 @@ export const DataStore = {
   },
 
   async runJobNow(jobId: string): Promise<Execution> {
-    try {
-      const res: any = await apiClient.jobs.runNow(jobId);
-      if (res.success && (res.data || res.executionId)) {
-        const executionData = res.data || {
-          _id: res.executionId,
-          jobId,
-          status: res.status || "completed",
-          responseStatus: res.responseStatus || 200,
-          durationMs: res.durationMs || 150,
-          startedAt: new Date().toISOString(),
-        };
-        const normalized = normalizeBackendExecution(executionData);
-        const current = this.getExecutions();
-        setStorageItem(EXECUTIONS_STORAGE_KEY, [normalized, ...current]);
+    const res: any = await apiClient.jobs.runNow(jobId);
+    if (res && res.success && (res.data || res.executionId)) {
+      const executionData = res.data || {
+        _id: res.executionId,
+        jobId,
+        status: res.status || "completed",
+        responseStatus: res.responseStatus || res.statusCode || 200,
+        durationMs: res.durationMs || 150,
+        startedAt: new Date().toISOString(),
+      };
+      const normalized = normalizeBackendExecution(executionData);
+      const current = this.getExecutions();
+      setStorageItem(EXECUTIONS_STORAGE_KEY, [normalized, ...current]);
 
-        // Re-sync jobs to get latest run timestamp and metrics from database
-        this.syncWithBackend().catch(() => {});
-        return normalized;
-      }
-    } catch (err: any) {
-      console.warn("Backend runNow unavailable, using fallback:", err.message);
+      // Re-sync jobs to get latest run timestamp and metrics from database
+      this.syncWithBackend().catch(() => {});
+      return normalized;
     }
-
-    const duration = Math.floor(Math.random() * 180) + 45;
-    return this.recordExecution(jobId, "success", duration, 200);
+    throw new Error(res?.error || "Failed to trigger job execution on backend");
   },
 
   clearExecutions(): void {
@@ -483,26 +476,19 @@ export const DataStore = {
   },
 
   async addChannel(data: Omit<NotificationChannel, "id">): Promise<NotificationChannel> {
-    let newChannel: NotificationChannel = {
-      id: `ch_${Date.now()}`,
-      ...data,
-    };
-
-    try {
-      const res = await apiClient.notifications.create(data);
-      if (res.success && res.data) {
-        newChannel = {
-          id: String(res.data._id || res.data.id),
-          type: res.data.type || data.type,
-          label: res.data.label || data.label,
-          target: res.data.target || data.target,
-          events: res.data.events || data.events,
-          enabled: res.data.enabled !== false,
-        };
-      }
-    } catch (err: any) {
-      console.warn("Backend channel save notice:", err.message);
+    const res = await apiClient.notifications.create(data);
+    if (!res || !res.success || !res.data) {
+      throw new Error(res?.error || "Failed to create alert channel in database");
     }
+
+    const newChannel: NotificationChannel = {
+      id: String(res.data._id || res.data.id),
+      type: res.data.type || data.type,
+      label: res.data.label || data.label,
+      target: res.data.target || data.target,
+      events: res.data.events || data.events,
+      enabled: res.data.enabled !== false,
+    };
 
     const channels = this.getChannels();
     this.saveChannels([newChannel, ...channels]);
@@ -530,6 +516,9 @@ export const DataStore = {
   async deleteChannel(id: string): Promise<void> {
     const channels = this.getChannels();
     const target = channels.find((c) => c.id === id);
+
+    await apiClient.notifications.delete(id);
+
     this.saveChannels(channels.filter((c) => c.id !== id));
     if (target) {
       this.addAudit({
@@ -540,11 +529,6 @@ export const DataStore = {
         target: target.label,
         kind: "channel.deleted",
       });
-      try {
-        await apiClient.notifications.delete(id);
-      } catch (err: any) {
-        console.warn("Backend delete channel notice:", err.message);
-      }
     }
   },
 
@@ -561,35 +545,23 @@ export const DataStore = {
     label: string,
     scopes: string[] = ["jobs:read", "jobs:write", "runs:dispatch"],
   ): Promise<ApiKey> {
-    let newKey: ApiKey = {
-      id: `key_${Date.now()}`,
-      label: label || "Production Service Key",
-      prefix: "crn_live_****",
-      createdAt: new Date().toISOString(),
+    const res = await apiClient.apiKeys.create({ label, scopes });
+    if (!res || !res.success || !res.data) {
+      throw new Error(res?.error || "Failed to generate API key in database");
+    }
+
+    const newKey: ApiKey = {
+      id: String(res.data._id || res.data.id),
+      label: res.data.label || label,
+      prefix:
+        res.data.prefix ||
+        (res.data.secretKey ? res.data.secretKey.substring(0, 13) : "crn_live_****"),
+      secretKey: res.data.secretKey,
+      createdAt: res.data.createdAt || new Date().toISOString(),
       createdMinutesAgo: 0,
       lastUsedMinutesAgo: null,
-      scopes,
+      scopes: res.data.scopes || scopes,
     };
-
-    try {
-      const res = await apiClient.apiKeys.create({ label, scopes });
-      if (res.success && res.data) {
-        newKey = {
-          id: String(res.data._id || res.data.id),
-          label: res.data.label || label,
-          prefix:
-            res.data.prefix ||
-            (res.data.secretKey ? res.data.secretKey.substring(0, 13) : "crn_live_****"),
-          secretKey: res.data.secretKey,
-          createdAt: res.data.createdAt || new Date().toISOString(),
-          createdMinutesAgo: 0,
-          lastUsedMinutesAgo: null,
-          scopes: res.data.scopes || scopes,
-        };
-      }
-    } catch (err: any) {
-      console.warn("Backend apiKey save notice:", err.message);
-    }
 
     const keys = this.getApiKeys();
     this.saveApiKeys([newKey, ...keys]);
@@ -608,6 +580,10 @@ export const DataStore = {
   async revokeApiKey(id: string): Promise<void> {
     const keys = this.getApiKeys();
     const target = keys.find((k) => k.id === id);
+
+    // Call backend API first; if it fails, throw error and keep key visible in UI
+    await apiClient.apiKeys.delete(id);
+
     this.saveApiKeys(keys.filter((k) => k.id !== id));
     if (target) {
       this.addAudit({
@@ -618,11 +594,6 @@ export const DataStore = {
         target: target.label,
         kind: "key.revoked",
       });
-      try {
-        await apiClient.apiKeys.delete(id);
-      } catch (err: any) {
-        console.warn("Backend revoke key notice:", err.message);
-      }
     }
   },
 
@@ -648,30 +619,19 @@ export const DataStore = {
         .slice(0, 2)
         .toUpperCase() || "MB";
 
-    let newMember: TeamMember = {
-      id: `tm_${Date.now()}`,
-      name,
-      email,
-      role,
-      status: "Active",
-      initials,
-    };
-
-    try {
-      const res = await apiClient.team.invite({ name, email, role });
-      if (res.success && res.data) {
-        newMember = {
-          id: String(res.data._id || res.data.id),
-          name: res.data.name || name,
-          email: res.data.email || email,
-          role: res.data.role || role,
-          status: res.data.status || "Active",
-          initials: res.data.initials || initials,
-        };
-      }
-    } catch (err: any) {
-      console.warn("Backend team invite notice:", err.message);
+    const res = await apiClient.team.invite({ name, email, role });
+    if (!res || !res.success || !res.data) {
+      throw new Error(res?.error || "Failed to invite team member in database");
     }
+
+    const newMember: TeamMember = {
+      id: String(res.data._id || res.data.id),
+      name: res.data.name || name,
+      email: res.data.email || email,
+      role: res.data.role || role,
+      status: res.data.status || "Active",
+      initials: res.data.initials || initials,
+    };
 
     const team = this.getTeam();
     this.saveTeam([...team, newMember]);
@@ -690,6 +650,9 @@ export const DataStore = {
   async removeMember(id: string): Promise<void> {
     const team = this.getTeam();
     const target = team.find((m) => m.id === id);
+
+    await apiClient.team.remove(id);
+
     this.saveTeam(team.filter((m) => m.id !== id));
     if (target) {
       this.addAudit({
@@ -700,11 +663,6 @@ export const DataStore = {
         target: target.name,
         kind: "member.removed",
       });
-      try {
-        await apiClient.team.remove(id);
-      } catch (err: any) {
-        console.warn("Backend remove team notice:", err.message);
-      }
     }
   },
 

@@ -1,8 +1,10 @@
 import axios from 'axios';
 import env from '../config/env.js';
 import logger from '../config/logger.js';
+import { validateUrlForSSRF } from '../utils/ssrf.js';
 
 let pingerIntervalTimer = null;
+let pingerInitialTimer = null;
 
 const pingerState = {
   enabled: process.env.SELF_PINGER_ENABLED !== 'false',
@@ -32,6 +34,28 @@ export async function executePing() {
   const url = resolvePingUrl();
   const startTime = Date.now();
   pingerState.totalPings += 1;
+
+  // If a custom target URL is configured, enforce SSRF validation before firing request
+  if (pingerState.targetUrl && pingerState.targetUrl.trim()) {
+    const ssrfCheck = await validateUrlForSSRF(url);
+    if (!ssrfCheck.safe) {
+      const duration = Date.now() - startTime;
+      pingerState.lastPingAt = new Date().toISOString();
+      pingerState.lastPingDurationMs = duration;
+      pingerState.lastPingStatus = 'failed';
+      pingerState.lastError = `SSRF Blocked: ${ssrfCheck.error}`;
+      pingerState.failCount += 1;
+
+      logger.warn(`[SelfPinger] Keep-alive ping rejected by SSRF guard: ${ssrfCheck.error}`);
+      return {
+        success: false,
+        url,
+        durationMs: duration,
+        error: `SSRF Blocked: ${ssrfCheck.error}`,
+        timestamp: pingerState.lastPingAt,
+      };
+    }
+  }
 
   try {
     const res = await axios.get(url, {
@@ -80,6 +104,10 @@ export async function executePing() {
  * Starts the background self-pinger loop
  */
 export function startSelfPinger() {
+  if (pingerInitialTimer) {
+    clearTimeout(pingerInitialTimer);
+    pingerInitialTimer = null;
+  }
   if (pingerIntervalTimer) {
     clearInterval(pingerIntervalTimer);
     pingerIntervalTimer = null;
@@ -94,7 +122,7 @@ export function startSelfPinger() {
   logger.info(`[SelfPinger] Starting keep-alive self-pinger every ${Math.round(interval / 1000)}s`);
 
   // Initial delayed ping 10 seconds after boot
-  setTimeout(() => {
+  pingerInitialTimer = setTimeout(() => {
     if (pingerState.enabled) {
       executePing().catch(() => {});
     }
@@ -111,6 +139,10 @@ export function startSelfPinger() {
  * Stops the background self-pinger loop
  */
 export function stopSelfPinger() {
+  if (pingerInitialTimer) {
+    clearTimeout(pingerInitialTimer);
+    pingerInitialTimer = null;
+  }
   if (pingerIntervalTimer) {
     clearInterval(pingerIntervalTimer);
     pingerIntervalTimer = null;

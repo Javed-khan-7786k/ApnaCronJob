@@ -93,10 +93,10 @@ export async function executeHttpRequest({
   expectedStatusCodes = [200, 201, 202, 204],
   responseValidation = {},
   retryPolicy = {},
+  redirectsFollowed = 0,
 }) {
   const startTime = Date.now();
   let currentUrl = url;
-  let redirectsFollowed = 0;
 
   // SSRF pre-check on target URL
   const ssrfCheck = await validateUrlForSSRF(currentUrl);
@@ -138,6 +138,8 @@ export async function executeHttpRequest({
       data: ['GET', 'HEAD'].includes(method.toUpperCase()) ? undefined : dataPayload,
       timeout: Math.min(Math.max(timeoutMs, 1000), 120000),
       maxRedirects: 0, // We handle redirects manually to ensure every redirect URL is validated against SSRF!
+      maxContentLength: 10 * 1024 * 1024, // 10MB limit to prevent OOM
+      maxBodyLength: 10 * 1024 * 1024,
       validateStatus: () => true, // Don't throw on HTTP status codes
       transformResponse: [(data) => data], // Preserve raw text body for accurate sanitization
     });
@@ -145,7 +147,7 @@ export async function executeHttpRequest({
     const durationMs = Date.now() - startTime;
     const statusCode = response.status;
 
-    // Check for redirect (301, 302, 307, 308)
+    // Check for redirect (301, 302, 303, 307, 308)
     if ([301, 302, 303, 307, 308].includes(statusCode) && response.headers.location) {
       if (redirectsFollowed >= MAX_REDIRECTS) {
         return {
@@ -177,16 +179,28 @@ export async function executeHttpRequest({
         };
       }
 
-      // Recurse safely with decremented redirect quota
+      // Drop sensitive authentication headers on cross-origin redirect
+      const currentOrigin = new URL(currentUrl).origin;
+      const targetOrigin = new URL(redirectTarget).origin;
+      const forwardHeaders = { ...headers };
+      if (currentOrigin !== targetOrigin) {
+        delete forwardHeaders['authorization'];
+        delete forwardHeaders['Authorization'];
+        delete forwardHeaders['cookie'];
+        delete forwardHeaders['Cookie'];
+      }
+
+      // Recurse safely with incremented redirect count
       return executeHttpRequest({
         url: redirectTarget,
         method: statusCode === 303 ? 'GET' : method,
-        headers,
+        headers: forwardHeaders,
         body: statusCode === 303 ? null : body,
         timeoutMs: Math.max(1000, timeoutMs - durationMs),
         expectedStatusCodes,
         responseValidation,
         retryPolicy,
+        redirectsFollowed: redirectsFollowed + 1,
       });
     }
 

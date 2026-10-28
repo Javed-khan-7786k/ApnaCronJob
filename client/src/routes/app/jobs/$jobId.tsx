@@ -90,13 +90,8 @@ export function JobDetailPage() {
         `Trigger dispatched for “${job.name}”! Status: ${exec.httpStatus || 200} ${exec.status.toUpperCase()} (${exec.durationMs}ms)`,
         { id: `run-${job.id}` },
       );
-    } catch {
-      const latency = Math.floor(Math.random() * 60 + 35);
-      DataStore.recordExecution(job.id, "success", latency, 200);
-      const updated = DataStore.getJob(job.id);
-      if (updated) setJob(updated);
-      setExecutions(DataStore.getExecutions());
-      toast.success(`Trigger dispatched for “${job.name}”! Status: 200 OK (${latency}ms)`, {
+    } catch (err: any) {
+      toast.error(`Failed to trigger “${job.name}”: ${err.message || "Engine execution failed"}`, {
         id: `run-${job.id}`,
       });
     }

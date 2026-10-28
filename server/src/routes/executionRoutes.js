@@ -87,12 +87,16 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 // POST /api/executions/:id/retry
 router.post('/:id/retry', authenticateToken, async (req, res, next) => {
   try {
-    const execution = await Execution.findById(req.params.id);
-    if (!execution) {
+    const existing = await Execution.findById(req.params.id);
+    if (!existing) {
       return res.status(404).json({ success: false, error: 'Execution record not found' });
     }
 
-    const job = await Job.findById(execution.jobId);
+    if (existing.status === 'running') {
+      return res.status(409).json({ success: false, error: 'Execution is currently in progress' });
+    }
+
+    const job = await Job.findById(existing.jobId);
     if (!job) {
       return res.status(404).json({ success: false, error: 'Parent job was not found' });
     }
@@ -101,6 +105,26 @@ router.post('/:id/retry', authenticateToken, async (req, res, next) => {
       if (!job.createdBy || String(job.createdBy) !== String(req.user._id)) {
         return res.status(404).json({ success: false, error: 'Parent job was not found' });
       }
+    }
+
+    // Atomically claim the execution for manual retry to prevent race conditions
+    const execution = await Execution.findOneAndUpdate(
+      {
+        _id: existing._id,
+        status: { $ne: 'running' },
+      },
+      {
+        $set: {
+          status: 'running',
+          workerId: 'manual-api',
+          lockedUntil: new Date(Date.now() + (job.timeoutMs || 60000) + 15000),
+        },
+      },
+      { new: true }
+    );
+
+    if (!execution) {
+      return res.status(409).json({ success: false, error: 'Execution is currently running or was claimed' });
     }
 
     execution.logs.push({

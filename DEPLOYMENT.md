@@ -63,11 +63,16 @@ To achieve reliable daily automation without paying for dedicated worker compute
    - `PORT`: `5000`
    - `MONGODB_URI`: `<Your MongoDB Atlas URI>`
    - `JWT_SECRET`: `<Generate a random 32+ character string>`
-   - `INTERNAL_TICK_SECRET`: `<Generate a secure secret token>`
-   - `CLIENT_URL`: `https://your-frontend.vercel.app` (or `*`)
+   - `INTERNAL_TICK_SECRET`: `<Generate a secure secret token (min 16 chars)>`
+   - `CLIENT_URL`: `https://your-frontend.vercel.app` (specify your exact domain; comma-separated if multiple)
    - `DEFAULT_TIMEZONE`: `Asia/Kolkata`
+   - `ADMIN_EMAIL`: `<Your admin email address>`
    - `TELEGRAM_BOT_TOKEN`: `<Your bot token from @BotFather>`
-   - `TELEGRAM_ALLOWED_CHAT_IDS`: `<Your Telegram Chat ID>`
+   - `TELEGRAM_ALLOWED_CHAT_IDS`: `<Your Telegram Chat ID (required to authorize bot commands)>`
+   - `TELEGRAM_WEBHOOK_SECRET`: `<Generate a secure random secret token for webhook validation>`
+   - `GOOGLE_CLIENT_ID`: `<Google OAuth Client ID>` (optional, for Google Sign-In)
+   - `GOOGLE_CLIENT_SECRET`: `<Google OAuth Client Secret>`
+   - `GOOGLE_CALLBACK_URL`: `https://apna-scheduler-api.onrender.com/api/auth/google/callback`
 6. Click **Create Web Service**. Your backend will deploy at `https://apna-scheduler-api.onrender.com`.
 
 ---
@@ -77,12 +82,12 @@ To achieve reliable daily automation without paying for dedicated worker compute
 1. In [Vercel Dashboard](https://vercel.com), click **Add New** &rarr; **Project**.
 2. Import your GitHub repository.
 3. Configure project settings:
-   - **Framework Preset**: `Vite`
+   - **Framework Preset**: `Other` (or TanStack Start)
    - **Root Directory**: `client`
    - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
+   - **Output Directory**: `.output/public`
 4. Add Environment Variable:
-   - `VITE_API_BASE_URL`: `https://apna-scheduler-api.onrender.com/api` (or configure a `vercel.json` rewrite to proxy `/api` requests to Render).
+   - `VITE_API_URL`: `https://apna-scheduler-api.onrender.com/api` (also supports `VITE_API_BASE_URL`).
 5. Deploy. Your dashboard will be live at `https://your-project.vercel.app`.
 
 ---
@@ -106,11 +111,12 @@ To wake your sleeping Render instance and trigger due jobs:
 2. Send `/newbot` and follow the prompts to choose a name and username (e.g. `ApnaSchedulerBot`).
 3. Copy the HTTP API token provided by BotFather and set it as `TELEGRAM_BOT_TOKEN`.
 4. Message `@userinfobot` or `@raw_data_bot` to get your numeric **Chat ID**.
-5. Set `TELEGRAM_ALLOWED_CHAT_IDS=<your-chat-id>`.
-6. To set up the Webhook for instant Telegram command response:
-   Send an HTTP request or use curl:
+5. Set `TELEGRAM_ALLOWED_CHAT_IDS=<your-chat-id>` (commands are rejected by default if not set).
+6. Set `TELEGRAM_WEBHOOK_SECRET=<random-secret-token>` on your server.
+7. Register the webhook with Telegram API including the secret token:
    ```bash
    curl -F "url=https://apna-scheduler-api.onrender.com/api/telegram/webhook" \
+        -F "secret_token=<YOUR_TELEGRAM_WEBHOOK_SECRET>" \
         https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
    ```
 

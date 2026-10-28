@@ -123,22 +123,23 @@ export function JobsTable({ initialJobs }: JobsTableProps) {
         `Dispatched “${job.name}” (${exec.httpStatus || 200} ${exec.status.toUpperCase()} • ${exec.durationMs}ms). Recorded in MongoDB.`,
         { id: `run-${job.id}` },
       );
-    } catch {
-      const duration = Math.floor(Math.random() * 80 + 40);
-      DataStore.recordExecution(job.id, "success", duration, 200);
-      setJobs(DataStore.getJobs());
-      toast.success(`Dispatched execution for “${job.name}” (200 OK • ${duration}ms).`, {
+    } catch (err: any) {
+      toast.error(`Failed to trigger “${job.name}”: ${err.message || "Execution failed"}`, {
         id: `run-${job.id}`,
       });
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!jobToDelete) return;
-    DataStore.deleteJob(jobToDelete.id);
-    setJobs(DataStore.getJobs());
-    toast.success(`Job “${jobToDelete.name}” deleted permanently.`);
-    setJobToDelete(null);
+    try {
+      await DataStore.deleteJob(jobToDelete.id);
+      setJobs(DataStore.getJobs());
+      toast.success(`Job “${jobToDelete.name}” deleted permanently.`);
+      setJobToDelete(null);
+    } catch (err: any) {
+      toast.error(`Failed to delete job: ${err.message || "Error occurred"}`);
+    }
   };
 
   const toggleSelectAll = () => {

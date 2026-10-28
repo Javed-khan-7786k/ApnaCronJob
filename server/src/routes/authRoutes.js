@@ -1,5 +1,6 @@
 import express from 'express';
 import axios from 'axios';
+import crypto from 'crypto';
 import { z } from 'zod';
 import User from '../models/User.js';
 import { hashPassword, comparePassword, signToken } from '../utils/crypto.js';
@@ -228,14 +229,15 @@ router.get('/google/callback', async (req, res, next) => {
     let user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       const username = await generateUniqueUsername(email.split('@')[0]);
-      const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      const randomPassword = crypto.randomBytes(24).toString('hex') + 'A1!';
       const hashedPassword = await hashPassword(randomPassword);
 
+      const adminEmail = (process.env.ADMIN_EMAIL || env.ADMIN_EMAIL || '').toLowerCase();
       user = await User.create({
         username,
         email: email.toLowerCase(),
         password: hashedPassword,
-        role: email.toLowerCase() === 'javedkhan7786king@gmail.com' ? 'admin' : 'user',
+        role: adminEmail && email.toLowerCase() === adminEmail ? 'admin' : 'user',
         status: 'active',
       });
     }
@@ -287,6 +289,15 @@ router.post('/google', async (req, res, next) => {
           error: 'Google token verification failed: email unverified.',
         });
       }
+
+      // Verify audience to prevent token reuse from other Google applications
+      if (env.GOOGLE_CLIENT_ID && googleRes.data.aud !== env.GOOGLE_CLIENT_ID) {
+        return res.status(401).json({
+          success: false,
+          error: 'Google token verification failed: audience mismatch.',
+        });
+      }
+
       verifiedEmail = googleRes.data.email.toLowerCase();
     } catch (tokenErr) {
       return res.status(401).json({
@@ -298,14 +309,15 @@ router.post('/google', async (req, res, next) => {
     let user = await User.findOne({ email: verifiedEmail });
     if (!user) {
       const username = await generateUniqueUsername(verifiedEmail.split('@')[0]);
-      const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      const randomPassword = crypto.randomBytes(24).toString('hex') + 'A1!';
       const hashedPassword = await hashPassword(randomPassword);
 
+      const adminEmail = (process.env.ADMIN_EMAIL || env.ADMIN_EMAIL || '').toLowerCase();
       user = await User.create({
         username,
         email: verifiedEmail,
         password: hashedPassword,
-        role: verifiedEmail === 'javedkhan7786king@gmail.com' ? 'admin' : 'user',
+        role: adminEmail && verifiedEmail === adminEmail ? 'admin' : 'user',
         status: 'active',
       });
     }

@@ -93,8 +93,7 @@ const createChannelHandler = async (req, res, next) => {
 router.post('/', authenticateToken, createChannelHandler);
 router.post('/channels', authenticateToken, createChannelHandler);
 
-// PUT /api/notifications/channels/:id
-router.put('/channels/:id', authenticateToken, async (req, res, next) => {
+const updateChannelHandler = async (req, res, next) => {
   try {
     const channel = await NotificationChannel.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
@@ -108,10 +107,9 @@ router.put('/channels/:id', authenticateToken, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// DELETE /api/notifications/channels/:id
-router.delete('/channels/:id', authenticateToken, async (req, res, next) => {
+const deleteChannelHandler = async (req, res, next) => {
   try {
     const channel = await NotificationChannel.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!channel) {
@@ -121,10 +119,9 @@ router.delete('/channels/:id', authenticateToken, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// POST /api/notifications/channels/:id/test
-router.post('/channels/:id/test', authenticateToken, async (req, res, next) => {
+const testChannelHandler = async (req, res, next) => {
   try {
     const channel = await NotificationChannel.findOne({ _id: req.params.id, userId: req.user._id });
     if (!channel) {
@@ -166,6 +163,15 @@ router.post('/channels/:id/test', authenticateToken, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
+
+router.put('/channels/:id', authenticateToken, updateChannelHandler);
+router.put('/:id', authenticateToken, updateChannelHandler);
+
+router.delete('/channels/:id', authenticateToken, deleteChannelHandler);
+router.delete('/:id', authenticateToken, deleteChannelHandler);
+
+router.post('/channels/:id/test', authenticateToken, testChannelHandler);
+router.post('/:id/test', authenticateToken, testChannelHandler);
 
 export default router;

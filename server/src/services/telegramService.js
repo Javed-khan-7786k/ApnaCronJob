@@ -22,8 +22,9 @@ export function isChatAuthorized(chatId) {
     .filter(Boolean);
 
   if (allowed.length === 0) {
-    // If no specific chat IDs are set yet, warn and allow or reject
-    return true;
+    // If no specific chat IDs are set, deny all access by default to prevent unauthorized control
+    logger.warn('Telegram command received but no TELEGRAM_ALLOWED_CHAT_IDS configured. Denying access.', { chatId: strId });
+    return false;
   }
 
   return allowed.includes(strId);

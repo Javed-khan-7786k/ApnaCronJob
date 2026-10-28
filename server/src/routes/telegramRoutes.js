@@ -9,13 +9,17 @@ const router = express.Router();
 
 // POST /api/telegram/webhook (Public endpoint for Telegram Bot API webhook)
 router.post('/webhook', async (req, res) => {
-  // If webhook secret configured, verify header
+  // Telegram Bot API secret token verification
   if (env.TELEGRAM_WEBHOOK_SECRET) {
     const receivedSecret = req.headers['x-telegram-bot-api-secret-token'];
-    if (receivedSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
-      logger.warn('Telegram webhook received with invalid secret token');
+    if (!receivedSecret || receivedSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
+      logger.warn('Telegram webhook received with invalid or missing secret token');
       return res.status(403).json({ error: 'Forbidden' });
     }
+  } else {
+    // If webhook secret is not configured, reject external webhook calls to prevent forgery
+    logger.warn('Telegram webhook rejected: TELEGRAM_WEBHOOK_SECRET is not configured');
+    return res.status(403).json({ error: 'Webhook secret required' });
   }
 
   const update = req.body;
